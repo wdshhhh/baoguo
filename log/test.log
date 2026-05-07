@@ -1,0 +1,377 @@
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE IF EXISTS "a1_packages"[0m
+  [1m[35m (2.8ms)[0m  [1m[35mCREATE TABLE "a1_packages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "addressee_name" varchar, "addressee_site" varchar, "created_at" datetime(6) NOT NULL, "telephone_number" integer, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.0ms)[0m  [1m[35mDROP TABLE IF EXISTS "a2_packages"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "a2_packages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "addressee_name" varchar, "addressee_site" varchar, "created_at" datetime(6) NOT NULL, "telephone_number" integer, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.0ms)[0m  [1m[35mDROP TABLE IF EXISTS "a3_packages"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "a3_packages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "addressee_name" varchar, "addressee_site" varchar, "created_at" datetime(6) NOT NULL, "telephone_number" integer, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.0ms)[0m  [1m[35mDROP TABLE IF EXISTS "notifications"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "notifications" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content" text NOT NULL, "created_at" datetime(6) NOT NULL, "notification_type" integer NOT NULL, "package_id" integer, "read_at" datetime(6), "status" integer DEFAULT 0 NOT NULL, "title" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_created_at" ON "notifications" ("created_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_notification_type" ON "notifications" ("notification_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_package_id" ON "notifications" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_status" ON "notifications" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_user_id" ON "notifications" ("user_id")[0m
+  [1m[35m (0.0ms)[0m  [1m[35mDROP TABLE IF EXISTS "operation_logs"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "operation_logs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "action" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "details" json, "ip_address" varchar, "resource_id" integer, "resource_type" varchar, "updated_at" datetime(6) NOT NULL, "user_agent" varchar, "user_id" integer)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_operation_logs_on_action" ON "operation_logs" ("action")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_operation_logs_on_created_at" ON "operation_logs" ("created_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_operation_logs_on_resource_type" ON "operation_logs" ("resource_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_operation_logs_on_user_id" ON "operation_logs" ("user_id")[0m
+  [1m[35m (0.0ms)[0m  [1m[35mDROP TABLE IF EXISTS "package_exceptions"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "package_exceptions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "description" text NOT NULL, "exception_type" integer NOT NULL, "package_id" integer NOT NULL, "reported_by_id" integer NOT NULL, "resolved_at" datetime(6), "resolved_by_id" integer, "solution" text, "status" integer DEFAULT 0 NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_deleted_at" ON "package_exceptions" ("deleted_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_exception_type" ON "package_exceptions" ("exception_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_package_id" ON "package_exceptions" ("package_id")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_reported_by_id" ON "package_exceptions" ("reported_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_resolved_by_id" ON "package_exceptions" ("resolved_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_status" ON "package_exceptions" ("status")[0m
+  [1m[35m (0.0ms)[0m  [1m[35mDROP TABLE IF EXISTS "packages"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "packages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "package_type" integer DEFAULT 0, "picked_up_at" datetime(6), "picked_up_by_id" integer, "pickup_code" varchar NOT NULL, "recipient_address" varchar, "recipient_name" varchar NOT NULL, "recipient_phone" varchar NOT NULL, "remark" text, "status" integer DEFAULT 0 NOT NULL, "storage_location" varchar, "stored_at" datetime(6), "stored_by_id" integer, "tracking_number" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer, "weight" decimal(8,2))[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_deleted_at" ON "packages" ("deleted_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_picked_up_by_id" ON "packages" ("picked_up_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_pickup_code" ON "packages" ("pickup_code")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_packages_on_recipient_phone" ON "packages" ("recipient_phone")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_packages_on_status" ON "packages" ("status")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_packages_on_stored_at" ON "packages" ("stored_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_stored_by_id" ON "packages" ("stored_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_packages_on_tracking_number" ON "packages" ("tracking_number")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_user_id" ON "packages" ("user_id")[0m
+  [1m[35m (0.0ms)[0m  [1m[35mDROP TABLE IF EXISTS "system_settings"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "system_settings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "description" varchar, "key" varchar NOT NULL, "setting_type" integer DEFAULT 0 NOT NULL, "updated_at" datetime(6) NOT NULL, "value" varchar)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_system_settings_on_key" ON "system_settings" ("key")[0m
+  [1m[35m (0.0ms)[0m  [1m[35mDROP TABLE IF EXISTS "users"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "users" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "employee_number" varchar, "last_login_at" datetime(6), "last_login_ip" varchar, "name" varchar NOT NULL, "password_digest" varchar NOT NULL, "phone" varchar NOT NULL, "role" integer DEFAULT 0 NOT NULL, "status" integer DEFAULT 1 NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_users_on_deleted_at" ON "users" ("deleted_at")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_users_on_employee_number" ON "users" ("employee_number")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_users_on_phone" ON "users" ("phone")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.1ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TEMPORARY TABLE "anotifications" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content" text NOT NULL, "created_at" datetime(6) NOT NULL, "notification_type" integer NOT NULL, "package_id" integer, "read_at" datetime(6), "status" integer DEFAULT 0 NOT NULL, "title" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_user_id" ON "anotifications" ("user_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_status" ON "anotifications" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_package_id" ON "anotifications" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_notification_type" ON "anotifications" ("notification_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_created_at" ON "anotifications" ("created_at")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "anotifications" ("id","content","created_at","notification_type","package_id","read_at","status","title","updated_at","user_id")
+                     SELECT "id","content","created_at","notification_type","package_id","read_at","status","title","updated_at","user_id" FROM "notifications"[0m
+  [1m[35m (0.4ms)[0m  [1m[35mDROP TABLE "notifications"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "notifications" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content" text NOT NULL, "created_at" datetime(6) NOT NULL, "notification_type" integer NOT NULL, "package_id" integer, "read_at" datetime(6), "status" integer DEFAULT 0 NOT NULL, "title" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer NOT NULL, CONSTRAINT "fk_rails_23471924aa"
+FOREIGN KEY ("package_id")
+  REFERENCES "packages" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_created_at" ON "notifications" ("created_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_notification_type" ON "notifications" ("notification_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_package_id" ON "notifications" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_status" ON "notifications" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_user_id" ON "notifications" ("user_id")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "notifications" ("id","content","created_at","notification_type","package_id","read_at","status","title","updated_at","user_id")
+                     SELECT "id","content","created_at","notification_type","package_id","read_at","status","title","updated_at","user_id" FROM "anotifications"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "anotifications"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TEMPORARY TABLE "anotifications" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content" text NOT NULL, "created_at" datetime(6) NOT NULL, "notification_type" integer NOT NULL, "package_id" integer, "read_at" datetime(6), "status" integer DEFAULT 0 NOT NULL, "title" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_user_id" ON "anotifications" ("user_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_status" ON "anotifications" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_package_id" ON "anotifications" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_notification_type" ON "anotifications" ("notification_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_anotifications_on_created_at" ON "anotifications" ("created_at")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "anotifications" ("id","content","created_at","notification_type","package_id","read_at","status","title","updated_at","user_id")
+                     SELECT "id","content","created_at","notification_type","package_id","read_at","status","title","updated_at","user_id" FROM "notifications"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "notifications"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "notifications" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "content" text NOT NULL, "created_at" datetime(6) NOT NULL, "notification_type" integer NOT NULL, "package_id" integer, "read_at" datetime(6), "status" integer DEFAULT 0 NOT NULL, "title" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer NOT NULL, CONSTRAINT "fk_rails_23471924aa"
+FOREIGN KEY ("package_id")
+  REFERENCES "packages" ("id")
+, CONSTRAINT "fk_rails_b080fb4855"
+FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_created_at" ON "notifications" ("created_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_notification_type" ON "notifications" ("notification_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_package_id" ON "notifications" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_status" ON "notifications" ("status")[0m
+  [1m[35m (0.5ms)[0m  [1m[35mCREATE INDEX "index_notifications_on_user_id" ON "notifications" ("user_id")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "notifications" ("id","content","created_at","notification_type","package_id","read_at","status","title","updated_at","user_id")
+                     SELECT "id","content","created_at","notification_type","package_id","read_at","status","title","updated_at","user_id" FROM "anotifications"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "anotifications"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.1ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.5ms)[0m  [1m[35mCREATE TEMPORARY TABLE "aoperation_logs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "action" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "details" json, "ip_address" varchar, "resource_id" integer, "resource_type" varchar, "updated_at" datetime(6) NOT NULL, "user_agent" varchar, "user_id" integer)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_aoperation_logs_on_user_id" ON "aoperation_logs" ("user_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_aoperation_logs_on_resource_type" ON "aoperation_logs" ("resource_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_aoperation_logs_on_created_at" ON "aoperation_logs" ("created_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_aoperation_logs_on_action" ON "aoperation_logs" ("action")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "aoperation_logs" ("id","action","created_at","details","ip_address","resource_id","resource_type","updated_at","user_agent","user_id")
+                     SELECT "id","action","created_at","details","ip_address","resource_id","resource_type","updated_at","user_agent","user_id" FROM "operation_logs"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mDROP TABLE "operation_logs"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "operation_logs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "action" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "details" json, "ip_address" varchar, "resource_id" integer, "resource_type" varchar, "updated_at" datetime(6) NOT NULL, "user_agent" varchar, "user_id" integer, CONSTRAINT "fk_rails_bc09e19dcb"
+FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_operation_logs_on_action" ON "operation_logs" ("action")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_operation_logs_on_created_at" ON "operation_logs" ("created_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_operation_logs_on_resource_type" ON "operation_logs" ("resource_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_operation_logs_on_user_id" ON "operation_logs" ("user_id")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "operation_logs" ("id","action","created_at","details","ip_address","resource_id","resource_type","updated_at","user_agent","user_id")
+                     SELECT "id","action","created_at","details","ip_address","resource_id","resource_type","updated_at","user_agent","user_id" FROM "aoperation_logs"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mDROP TABLE "aoperation_logs"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TEMPORARY TABLE "apackage_exceptions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "description" text NOT NULL, "exception_type" integer NOT NULL, "package_id" integer NOT NULL, "reported_by_id" integer NOT NULL, "resolved_at" datetime(6), "resolved_by_id" integer, "solution" text, "status" integer DEFAULT 0 NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_status" ON "apackage_exceptions" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_resolved_by_id" ON "apackage_exceptions" ("resolved_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_reported_by_id" ON "apackage_exceptions" ("reported_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_package_id" ON "apackage_exceptions" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_exception_type" ON "apackage_exceptions" ("exception_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_deleted_at" ON "apackage_exceptions" ("deleted_at")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "apackage_exceptions" ("id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at")
+                     SELECT "id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at" FROM "package_exceptions"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "package_exceptions"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "package_exceptions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "description" text NOT NULL, "exception_type" integer NOT NULL, "package_id" integer NOT NULL, "reported_by_id" integer NOT NULL, "resolved_at" datetime(6), "resolved_by_id" integer, "solution" text, "status" integer DEFAULT 0 NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_fdf2630b95"
+FOREIGN KEY ("package_id")
+  REFERENCES "packages" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_deleted_at" ON "package_exceptions" ("deleted_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_exception_type" ON "package_exceptions" ("exception_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_package_id" ON "package_exceptions" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_reported_by_id" ON "package_exceptions" ("reported_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_resolved_by_id" ON "package_exceptions" ("resolved_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_status" ON "package_exceptions" ("status")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "package_exceptions" ("id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at")
+                     SELECT "id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at" FROM "apackage_exceptions"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mDROP TABLE "apackage_exceptions"[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TEMPORARY TABLE "apackage_exceptions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "description" text NOT NULL, "exception_type" integer NOT NULL, "package_id" integer NOT NULL, "reported_by_id" integer NOT NULL, "resolved_at" datetime(6), "resolved_by_id" integer, "solution" text, "status" integer DEFAULT 0 NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_status" ON "apackage_exceptions" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_resolved_by_id" ON "apackage_exceptions" ("resolved_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_reported_by_id" ON "apackage_exceptions" ("reported_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_package_id" ON "apackage_exceptions" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_exception_type" ON "apackage_exceptions" ("exception_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_deleted_at" ON "apackage_exceptions" ("deleted_at")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "apackage_exceptions" ("id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at")
+                     SELECT "id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at" FROM "package_exceptions"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mDROP TABLE "package_exceptions"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "package_exceptions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "description" text NOT NULL, "exception_type" integer NOT NULL, "package_id" integer NOT NULL, "reported_by_id" integer NOT NULL, "resolved_at" datetime(6), "resolved_by_id" integer, "solution" text, "status" integer DEFAULT 0 NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_fdf2630b95"
+FOREIGN KEY ("package_id")
+  REFERENCES "packages" ("id")
+, CONSTRAINT "fk_rails_fe2b368106"
+FOREIGN KEY ("reported_by_id")
+  REFERENCES "users" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_deleted_at" ON "package_exceptions" ("deleted_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_exception_type" ON "package_exceptions" ("exception_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_package_id" ON "package_exceptions" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_reported_by_id" ON "package_exceptions" ("reported_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_resolved_by_id" ON "package_exceptions" ("resolved_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_status" ON "package_exceptions" ("status")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "package_exceptions" ("id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at")
+                     SELECT "id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at" FROM "apackage_exceptions"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mDROP TABLE "apackage_exceptions"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TEMPORARY TABLE "apackage_exceptions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "description" text NOT NULL, "exception_type" integer NOT NULL, "package_id" integer NOT NULL, "reported_by_id" integer NOT NULL, "resolved_at" datetime(6), "resolved_by_id" integer, "solution" text, "status" integer DEFAULT 0 NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_status" ON "apackage_exceptions" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_resolved_by_id" ON "apackage_exceptions" ("resolved_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_reported_by_id" ON "apackage_exceptions" ("reported_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_package_id" ON "apackage_exceptions" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_exception_type" ON "apackage_exceptions" ("exception_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackage_exceptions_on_deleted_at" ON "apackage_exceptions" ("deleted_at")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "apackage_exceptions" ("id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at")
+                     SELECT "id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at" FROM "package_exceptions"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "package_exceptions"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "package_exceptions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "description" text NOT NULL, "exception_type" integer NOT NULL, "package_id" integer NOT NULL, "reported_by_id" integer NOT NULL, "resolved_at" datetime(6), "resolved_by_id" integer, "solution" text, "status" integer DEFAULT 0 NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_fe2b368106"
+FOREIGN KEY ("reported_by_id")
+  REFERENCES "users" ("id")
+, CONSTRAINT "fk_rails_fdf2630b95"
+FOREIGN KEY ("package_id")
+  REFERENCES "packages" ("id")
+, CONSTRAINT "fk_rails_ca67ceec6a"
+FOREIGN KEY ("resolved_by_id")
+  REFERENCES "users" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_deleted_at" ON "package_exceptions" ("deleted_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_exception_type" ON "package_exceptions" ("exception_type")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_package_id" ON "package_exceptions" ("package_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_reported_by_id" ON "package_exceptions" ("reported_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_resolved_by_id" ON "package_exceptions" ("resolved_by_id")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_package_exceptions_on_status" ON "package_exceptions" ("status")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "package_exceptions" ("id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at")
+                     SELECT "id","created_at","deleted_at","description","exception_type","package_id","reported_by_id","resolved_at","resolved_by_id","solution","status","updated_at" FROM "apackage_exceptions"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "apackage_exceptions"[0m
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.1ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TEMPORARY TABLE "apackages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "package_type" integer DEFAULT 0, "picked_up_at" datetime(6), "picked_up_by_id" integer, "pickup_code" varchar NOT NULL, "recipient_address" varchar, "recipient_name" varchar NOT NULL, "recipient_phone" varchar NOT NULL, "remark" text, "status" integer DEFAULT 0 NOT NULL, "storage_location" varchar, "stored_at" datetime(6), "stored_by_id" integer, "tracking_number" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer, "weight" decimal(8,2))[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_user_id" ON "apackages" ("user_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "tindex_apackages_on_tracking_number" ON "apackages" ("tracking_number")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_stored_by_id" ON "apackages" ("stored_by_id")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_stored_at" ON "apackages" ("stored_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_status" ON "apackages" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_recipient_phone" ON "apackages" ("recipient_phone")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_pickup_code" ON "apackages" ("pickup_code")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_picked_up_by_id" ON "apackages" ("picked_up_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_deleted_at" ON "apackages" ("deleted_at")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "apackages" ("id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight")
+                     SELECT "id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight" FROM "packages"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "packages"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "packages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "package_type" integer DEFAULT 0, "picked_up_at" datetime(6), "picked_up_by_id" integer, "pickup_code" varchar NOT NULL, "recipient_address" varchar, "recipient_name" varchar NOT NULL, "recipient_phone" varchar NOT NULL, "remark" text, "status" integer DEFAULT 0 NOT NULL, "storage_location" varchar, "stored_at" datetime(6), "stored_by_id" integer, "tracking_number" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer, "weight" decimal(8,2), CONSTRAINT "fk_rails_bb26f220aa"
+FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_deleted_at" ON "packages" ("deleted_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_picked_up_by_id" ON "packages" ("picked_up_by_id")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_packages_on_pickup_code" ON "packages" ("pickup_code")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_recipient_phone" ON "packages" ("recipient_phone")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_status" ON "packages" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_stored_at" ON "packages" ("stored_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_stored_by_id" ON "packages" ("stored_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_packages_on_tracking_number" ON "packages" ("tracking_number")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "index_packages_on_user_id" ON "packages" ("user_id")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "packages" ("id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight")
+                     SELECT "id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight" FROM "apackages"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "apackages"[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.1ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TEMPORARY TABLE "apackages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "package_type" integer DEFAULT 0, "picked_up_at" datetime(6), "picked_up_by_id" integer, "pickup_code" varchar NOT NULL, "recipient_address" varchar, "recipient_name" varchar NOT NULL, "recipient_phone" varchar NOT NULL, "remark" text, "status" integer DEFAULT 0 NOT NULL, "storage_location" varchar, "stored_at" datetime(6), "stored_by_id" integer, "tracking_number" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer, "weight" decimal(8,2))[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_user_id" ON "apackages" ("user_id")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE UNIQUE INDEX "tindex_apackages_on_tracking_number" ON "apackages" ("tracking_number")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_stored_by_id" ON "apackages" ("stored_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_stored_at" ON "apackages" ("stored_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_status" ON "apackages" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_recipient_phone" ON "apackages" ("recipient_phone")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_pickup_code" ON "apackages" ("pickup_code")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_picked_up_by_id" ON "apackages" ("picked_up_by_id")[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_deleted_at" ON "apackages" ("deleted_at")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "apackages" ("id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight")
+                     SELECT "id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight" FROM "packages"[0m
+  [1m[35m (0.3ms)[0m  [1m[35mDROP TABLE "packages"[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE TABLE "packages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "package_type" integer DEFAULT 0, "picked_up_at" datetime(6), "picked_up_by_id" integer, "pickup_code" varchar NOT NULL, "recipient_address" varchar, "recipient_name" varchar NOT NULL, "recipient_phone" varchar NOT NULL, "remark" text, "status" integer DEFAULT 0 NOT NULL, "storage_location" varchar, "stored_at" datetime(6), "stored_by_id" integer, "tracking_number" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer, "weight" decimal(8,2), CONSTRAINT "fk_rails_bb26f220aa"
+FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id")
+, CONSTRAINT "fk_rails_e536b6c071"
+FOREIGN KEY ("picked_up_by_id")
+  REFERENCES "users" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_deleted_at" ON "packages" ("deleted_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_picked_up_by_id" ON "packages" ("picked_up_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_pickup_code" ON "packages" ("pickup_code")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_recipient_phone" ON "packages" ("recipient_phone")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_status" ON "packages" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_stored_at" ON "packages" ("stored_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_stored_by_id" ON "packages" ("stored_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_packages_on_tracking_number" ON "packages" ("tracking_number")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_user_id" ON "packages" ("user_id")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "packages" ("id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight")
+                     SELECT "id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight" FROM "apackages"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "apackages"[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = ON[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = OFF[0m
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[36mBEGIN immediate TRANSACTION[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TEMPORARY TABLE "apackages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "package_type" integer DEFAULT 0, "picked_up_at" datetime(6), "picked_up_by_id" integer, "pickup_code" varchar NOT NULL, "recipient_address" varchar, "recipient_name" varchar NOT NULL, "recipient_phone" varchar NOT NULL, "remark" text, "status" integer DEFAULT 0 NOT NULL, "storage_location" varchar, "stored_at" datetime(6), "stored_by_id" integer, "tracking_number" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer, "weight" decimal(8,2))[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_user_id" ON "apackages" ("user_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "tindex_apackages_on_tracking_number" ON "apackages" ("tracking_number")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_stored_by_id" ON "apackages" ("stored_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_stored_at" ON "apackages" ("stored_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_status" ON "apackages" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_recipient_phone" ON "apackages" ("recipient_phone")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_pickup_code" ON "apackages" ("pickup_code")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_picked_up_by_id" ON "apackages" ("picked_up_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "tindex_apackages_on_deleted_at" ON "apackages" ("deleted_at")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "apackages" ("id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight")
+                     SELECT "id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight" FROM "packages"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "packages"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "packages" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "created_at" datetime(6) NOT NULL, "deleted_at" datetime(6), "package_type" integer DEFAULT 0, "picked_up_at" datetime(6), "picked_up_by_id" integer, "pickup_code" varchar NOT NULL, "recipient_address" varchar, "recipient_name" varchar NOT NULL, "recipient_phone" varchar NOT NULL, "remark" text, "status" integer DEFAULT 0 NOT NULL, "storage_location" varchar, "stored_at" datetime(6), "stored_by_id" integer, "tracking_number" varchar NOT NULL, "updated_at" datetime(6) NOT NULL, "user_id" integer, "weight" decimal(8,2), CONSTRAINT "fk_rails_e536b6c071"
+FOREIGN KEY ("picked_up_by_id")
+  REFERENCES "users" ("id")
+, CONSTRAINT "fk_rails_bb26f220aa"
+FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id")
+, CONSTRAINT "fk_rails_b8e5d8f200"
+FOREIGN KEY ("stored_by_id")
+  REFERENCES "users" ("id")
+)[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_deleted_at" ON "packages" ("deleted_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_picked_up_by_id" ON "packages" ("picked_up_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_pickup_code" ON "packages" ("pickup_code")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_recipient_phone" ON "packages" ("recipient_phone")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_status" ON "packages" ("status")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_stored_at" ON "packages" ("stored_at")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_stored_by_id" ON "packages" ("stored_by_id")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_packages_on_tracking_number" ON "packages" ("tracking_number")[0m
+  [1m[35m (0.1ms)[0m  [1m[35mCREATE INDEX "index_packages_on_user_id" ON "packages" ("user_id")[0m
+  [1m[35mSQL (0.1ms)[0m  [1m[32mINSERT INTO "packages" ("id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight")
+                     SELECT "id","created_at","deleted_at","package_type","picked_up_at","picked_up_by_id","pickup_code","recipient_address","recipient_name","recipient_phone","remark","status","storage_location","stored_at","stored_by_id","tracking_number","updated_at","user_id","weight" FROM "apackages"[0m
+  [1m[35m (0.2ms)[0m  [1m[35mDROP TABLE "apackages"[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[36mCOMMIT TRANSACTION[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA defer_foreign_keys = 0[0m
+  [1m[35m (0.0ms)[0m  [1m[35mPRAGMA foreign_keys = 1[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "schema_migrations" ("version" varchar NOT NULL PRIMARY KEY)[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+  [1m[35m (0.1ms)[0m  [1m[32mINSERT INTO "schema_migrations" (version) VALUES (20251117074335)[0m
+  [1m[35m (0.1ms)[0m  [1m[32mINSERT INTO "schema_migrations" (version) VALUES
+(20251117074329),
+(20251117074047),
+(20250402000006),
+(20250402000005),
+(20250402000004),
+(20250402000003),
+(20250402000002),
+(20250402000001);[0m
+  [1m[35m (0.2ms)[0m  [1m[35mCREATE TABLE "ar_internal_metadata" ("key" varchar NOT NULL PRIMARY KEY, "value" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL)[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.1ms)[0m  [1m[34mSELECT * FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = ? ORDER BY "ar_internal_metadata"."key" ASC LIMIT 1[0m  [[nil, "environment"]]
+  [1m[36mActiveRecord::InternalMetadata Create (0.1ms)[0m  [1m[32mINSERT INTO "ar_internal_metadata" ("key", "value", "created_at", "updated_at") VALUES ('environment', 'test', '2026-04-06 17:44:21.073697', '2026-04-06 17:44:21.073699') RETURNING "key"[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.1ms)[0m  [1m[34mSELECT * FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = ? ORDER BY "ar_internal_metadata"."key" ASC LIMIT 1[0m  [[nil, "environment"]]
+  [1m[36mActiveRecord::InternalMetadata Load (0.1ms)[0m  [1m[34mSELECT * FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = ? ORDER BY "ar_internal_metadata"."key" ASC LIMIT 1[0m  [[nil, "schema_sha1"]]
+  [1m[36mActiveRecord::InternalMetadata Create (0.1ms)[0m  [1m[32mINSERT INTO "ar_internal_metadata" ("key", "value", "created_at", "updated_at") VALUES ('schema_sha1', '6be2f84754df41e7bd2dc4501fd5422ee0ae9e12', '2026-04-06 17:44:21.075125', '2026-04-06 17:44:21.075126') RETURNING "key"[0m
+  [1m[36mActiveRecord::SchemaMigration Load (0.2ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.3ms)[0m  [1m[34mSELECT * FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = ? ORDER BY "ar_internal_metadata"."key" ASC LIMIT 1[0m  [[nil, "schema_sha1"]]
+  [1m[36mActiveRecord::SchemaMigration Load (0.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m

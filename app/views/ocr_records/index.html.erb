@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OCR识别记录</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .header h1 { color: #2c3e50; }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s;
+    }
+    .btn-primary { background: #3498db; color: white; }
+    .btn-primary:hover { background: #2980b9; }
+
+    .engine-selector {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .engine-label { font-weight: 600; color: #2c3e50; }
+    .engine-buttons { display: flex; gap: 10px; }
+    .engine-btn {
+      padding: 8px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 20px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+    .engine-btn:hover { border-color: #3498db; }
+    .engine-btn.active {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .stat-value { font-size: 32px; font-weight: 700; color: #2c3e50; }
+    .stat-label { color: #7f8c8d; margin-top: 5px; }
+    .stat-success { border-left: 4px solid #27ae60; }
+    .stat-pending { border-left: 4px solid #f39c12; }
+    .stat-failed { border-left: 4px solid #e74c3c; }
+    .stat-total { border-left: 4px solid #3498db; }
+
+    .table-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f8f9fa; }
+    th {
+      padding: 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #2c3e50;
+      border-bottom: 2px solid #ecf0f1;
+    }
+    td {
+      padding: 16px;
+      border-bottom: 1px solid #ecf0f1;
+      color: #34495e;
+    }
+    tbody tr:hover { background: #f8f9fa; }
+
+    .thumbnail {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-pending { background: #f39c12; color: white; }
+    .status-processing { background: #3498db; color: white; }
+    .status-recognized { background: #27ae60; color: white; }
+    .status-corrected { background: #9b59b6; color: white; }
+    .status-failed { background: #e74c3c; color: white; }
+
+    .action-link {
+      color: #3498db;
+      text-decoration: none;
+      margin-right: 15px;
+      font-size: 14px;
+    }
+    .action-link:hover { text-decoration: underline; }
+    .action-link.delete { color: #e74c3c; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #7f8c8d;
+    }
+    .empty-icon { font-size: 64px; margin-bottom: 20px; }
+    .empty-text { font-size: 18px; margin-bottom: 20px; }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px;
+    }
+    .pagination a, .pagination span {
+      padding: 8px 16px;
+      border: 1px solid #ecf0f1;
+      border-radius: 6px;
+      text-decoration: none;
+      color: #34495e;
+    }
+    .pagination .current {
+      background: #3498db;
+      color: white;
+      border-color: #3498db;
+    }
+
+    .flash { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .flash.alert { background: #fee; color: #c33; border: 1px solid #fcc; }
+    .flash.notice { background: #efe; color: #3c3; border: 1px solid #cfc; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <% if flash[:alert] %>
+      <div class="flash alert"><%= flash[:alert] %></div>
+    <% end %>
+    <% if flash[:notice] %>
+      <div class="flash notice"><%= flash[:notice] %></div>
+    <% end %>
+
+    <div class="header">
+      <h1>📋 OCR识别记录</h1>
+      <a href="<%= new_ocr_record_path %>" class="btn btn-primary">
+        📷 上传新图片
+      </a>
+    </div>
+
+    <!-- 引擎选择器 -->
+    <div class="engine-selector">
+      <span class="engine-label">当前OCR引擎:</span>
+      <div class="engine-buttons">
+        <% @available_engines.each do |engine| %>
+          <%= button_to engine, switch_engine_ocr_records_path(engine: engine), 
+              method: :post, 
+              class: "engine-btn #{@current_engine == engine ? 'active' : ''}" %>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <%
+      total_count = OcrRecord.count
+      success_count = OcrRecord.where(status: [:recognized, :corrected]).count
+      pending_count = OcrRecord.where(status: [:pending, :processing]).count
+      failed_count = OcrRecord.where(status: :failed).count
+    %>
+
+    <div class="stats-grid">
+      <div class="stat-card stat-total">
+        <div class="stat-value"><%= total_count %></div>
+        <div class="stat-label">总记录数</div>
+      </div>
+      <div class="stat-card stat-success">
+        <div class="stat-value"><%= success_count %></div>
+        <div class="stat-label">识别成功</div>
+      </div>
+      <div class="stat-card stat-pending">
+        <div class="stat-value"><%= pending_count %></div>
+        <div class="stat-label">处理中</div>
+      </div>
+      <div class="stat-card stat-failed">
+        <div class="stat-value"><%= failed_count %></div>
+        <div class="stat-label">识别失败</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <% if @ocr_records.any? %>
+        <table>
+          <thead>
+            <tr>
+              <th>图片</th>
+              <th>运单号</th>
+              <th>收件人</th>
+              <th>快递公司</th>
+              <th>状态</th>
+              <th>识别时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @ocr_records.each do |record| %>
+              <tr>
+                <td>
+                  <%= image_tag record.image_url, class: 'thumbnail', onclick: "window.open('#{url_for(record)}')" %>
+                </td>
+                <td><%= record.tracking_number.presence || '-' %></td>
+                <td><%= record.recipient_name.presence || '-' %></td>
+                <td><%= record.courier_company.presence || '-' %></td>
+                <td>
+                  <span class="status-badge status-<%= record.status %>">
+                    <%= record.status.humanize %>
+                  </span>
+                </td>
+                <td><%= l(record.created_at, format: :short) if record.created_at.present? %></td>
+                <td>
+                  <a href="<%= ocr_record_path(record) %>" class="action-link">查看详情</a>
+                  <%= button_to '删除', record, 
+                      method: :delete, 
+                      data: { confirm: '确定要删除这条记录吗?' },
+                      class: 'action-link delete',
+                      style: 'background: none; border: none; padding: 0; cursor: pointer;' %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">暂无识别记录</div>
+          <a href="<%= new_ocr_record_path %>" class="btn btn-primary">
+            开始上传第一张图片
+          </a>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- 分页 -->
+    <% if @ocr_records.respond_to?(:total_pages) && @ocr_records.total_pages > 1 %>
+      <div class="pagination">
+        <%= will_paginate @ocr_records %>
+      </div>
+    <% end %>
+  </div>
+</body>
+</html>

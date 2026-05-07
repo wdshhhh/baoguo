@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>快递面单OCR识别</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .header h1 { color: #2c3e50; margin-bottom: 10px; }
+    .header p { color: #7f8c8d; }
+    
+    .upload-card { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    
+    .upload-area {
+      border: 3px dashed #3498db;
+      border-radius: 12px;
+      padding: 60px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: #f8f9fa;
+    }
+    .upload-area:hover { border-color: #2980b9; background: #ecf0f1; }
+    .upload-area.dragover { border-color: #27ae60; background: #d5f4e6; }
+    
+    .upload-icon { font-size: 64px; margin-bottom: 20px; }
+    .upload-text { font-size: 18px; color: #2c3e50; margin-bottom: 10px; }
+    .upload-hint { font-size: 14px; color: #7f8c8d; }
+    
+    .camera-btn {
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .camera-btn:hover { background: #219a52; }
+    
+    .preview-area { margin-top: 30px; display: none; }
+    .preview-area.show { display: block; }
+    .preview-image { max-width: 100%; border-radius: 8px; margin-bottom: 20px; }
+    .preview-info { color: #7f8c8d; font-size: 14px; }
+    
+    .submit-btn {
+      margin-top: 20px;
+      width: 100%;
+      padding: 15px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .submit-btn:hover { background: #2980b9; }
+    .submit-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+    
+    .hidden-input { display: none; }
+    
+    .flash { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .flash.alert { background: #fee; color: #c33; border: 1px solid #fcc; }
+    .flash.notice { background: #efe; color: #3c3; border: 1px solid #cfc; }
+    
+    .back-link { display: inline-block; margin-top: 20px; color: #3498db; text-decoration: none; }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <% if flash[:alert] %>
+      <div class="flash alert"><%= flash[:alert] %></div>
+    <% end %>
+    <% if flash[:notice] %>
+      <div class="flash notice"><%= flash[:notice] %></div>
+    <% end %>
+
+    <div class="header">
+      <h1>📦 快递面单OCR识别</h1>
+      <p>上传或拍摄面单图片，自动识别运单号、姓名、电话、地址等信息</p>
+    </div>
+
+    <div class="upload-card">
+      <%= form_tag ocr_records_path, multipart: true do %>
+        <!-- 上传区域 -->
+        <div class="upload-area" id="uploadArea">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">点击上传或拖拽图片到这里</div>
+          <div class="upload-hint">支持 JPG、PNG 格式，单张最大 10MB</div>
+          
+          <input type="file" id="fileInput" name="image" accept="image/*" class="hidden-input">
+        </div>
+
+        <!-- 拍照按钮 -->
+        <div style="text-align: center;">
+          <button type="button" class="camera-btn" id="cameraBtn">
+            📱 直接拍照
+          </button>
+        </div>
+
+        <!-- 图片预览 -->
+        <div class="preview-area" id="previewArea">
+          <img id="previewImage" class="preview-image">
+          <div class="preview-info" id="previewInfo"></div>
+          <button type="button" class="camera-btn" id="reselectBtn" style="background: #e74c3c;">
+            重新选择
+          </button>
+        </div>
+
+        <!-- 提交按钮 -->
+        <button type="submit" class="submit-btn" id="submitBtn" disabled>
+          开始识别
+        </button>
+      <% end %>
+    </div>
+
+    <a href="<%= ocr_records_path %>" class="back-link">← 查看历史记录</a>
+  </div>
+
+  <script>
+    // DOM元素
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const previewArea = document.getElementById('previewArea');
+    const previewImage = document.getElementById('previewImage');
+    const previewInfo = document.getElementById('previewInfo');
+    const submitBtn = document.getElementById('submitBtn');
+    const reselectBtn = document.getElementById('reselectBtn');
+    const cameraBtn = document.getElementById('cameraBtn');
+
+    let selectedFile = null;
+
+    // 点击上传区域
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // 拖拽事件
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    // 文件选择
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    // 拍照功能
+    cameraBtn.addEventListener('click', () => {
+      // 使用capture属性调用摄像头
+      fileInput.setAttribute('capture', 'environment');
+      fileInput.click();
+    });
+
+    // 重新选择
+    reselectBtn.addEventListener('click', () => {
+      selectedFile = null;
+      fileInput.value = '';
+      previewArea.classList.remove('show');
+      uploadArea.style.display = 'block';
+      submitBtn.disabled = true;
+      fileInput.removeAttribute('capture');
+    });
+
+    // 处理选择的文件
+    function handleFile(file) {
+      // 验证文件类型
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        alert('只支持 JPG、PNG 格式的图片');
+        return;
+      }
+
+      // 验证文件大小（10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        alert('图片大小不能超过 10MB');
+        return;
+      }
+
+      selectedFile = file;
+
+      // 显示预览
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        previewInfo.innerHTML = `
+          <strong>文件名:</strong> ${file.name}<br>
+          <strong>大小:</strong> ${formatFileSize(file.size)}
+        `;
+        previewArea.classList.add('show');
+        uploadArea.style.display = 'none';
+        submitBtn.disabled = false;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+  </script>
+</body>
+</html>

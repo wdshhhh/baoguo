@@ -1,0 +1,34 @@
+---
+---
+tesseract:
+  lang: chi_sim+eng
+  psm_modes:
+  - 6
+  - 8
+  - 3
+  oem: 3
+  timeout: 30
+image_processing:
+  max_width: 1200
+  max_height: 1200
+  min_width: 800
+  min_height: 800
+  contrast: 30
+  brightness: 15
+  sharpen: 0x0.8
+  grayscale: true
+patterns:
+  tracking_number:
+  - "(?:运单号|单号|快递单号|Tracking)[：:\\s]*([A-Z0-9]{10,20})"
+  - "\\b(SF|ZT|YT|JD|EMS|STO|ZTO|YTO|HTKY)[A-Z0-9]{8,18}\\b"
+  - "\\b([0-9]{12,18})\\b"
+  phone:
+  - 1[3-9]\d{9}
+  - "(?:手机|电话|联系方式)[：:\\s]*(1[3-9]\\d{9})"
+  name:
+  - "(?:收件人|收货人|姓名)[：:\\s]*([\\u4e00-\\u9fa5]{2,4})"
+  - "\\b[\\u4e00-\\u9fa5]{2,4}\\b"
+fallback:
+  enabled: true
+  engine: demo
+  confidence_threshold: 0.6

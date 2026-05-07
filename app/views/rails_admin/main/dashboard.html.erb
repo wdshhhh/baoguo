@@ -1,0 +1,297 @@
+<% if @abstract_models %>
+  <!-- 引入Chart.js（若项目已引入可删除） -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+      /* 进度条动画样式 */
+      .animate-width-to {
+          transition: width ease;
+      }
+      /* 进度条容器适配 */
+      .progress-container {
+          margin-top: 8px;
+      }
+      /* 统计卡片样式 */
+      .stats-card {
+          background: #f8f9fa;
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 15px;
+          border-left: 4px solid #007bff;
+      }
+      .stats-number {
+          font-size: 1.5rem;
+          font-weight: bold;
+          color: #007bff;
+      }
+      .stats-label {
+          font-size: 0.8rem;
+          color: #6c757d;
+      }
+      .chart-container {
+          background: white;
+          border-radius: 8px;
+          padding: 15px;
+          margin-bottom: 15px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .small-chart {
+          height: 200px !important;
+      }
+  </style>
+
+  <!-- 统计卡片 -->
+  <div class="row mb-3">
+    <div class="col-md-3">
+      <div class="stats-card">
+        <div class="stats-number"><%= @count.values.sum %></div>
+        <div class="stats-label"><%= t('admin.dashboard.total_records') %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stats-card">
+        <div class="stats-number"><%= @abstract_models.count %></div>
+        <div class="stats-label"><%= t('admin.dashboard.total_models') %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stats-card">
+        <div class="stats-number"><%= @max %></div>
+        <div class="stats-label"><%= t('admin.dashboard.max_records') %></div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stats-card">
+        <div class="stats-number"><%= (@count.values.sum.to_f / @abstract_models.count).round(1) %></div>
+        <div class="stats-label"><%= t('admin.dashboard.avg_records') %></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 柱状图 -->
+  <div class="chart-container">
+    <h5 class="mb-3"><%= t('admin.dashboard.records_distribution') %></h5>
+    <canvas id="barChart" class="small-chart"></canvas>
+  </div>
+
+  <table class="table table-condensed table-striped table-hover">
+    <!-- 表格内容保持不变 -->
+    <thead>
+    <tr>
+      <th class="shrink model-name"><%= t "admin.table_headers.model_name" %></th>
+      <th class="shrink last-created"><%= t "admin.table_headers.last_created" %></th>
+      <th class="records" style="width: 250px;"><%= t "admin.table_headers.records" %></th>
+      <th class="shrink controls"></th>
+    </tr>
+    </thead>
+    <tbody class="table-group-divider">
+    <% @abstract_models.each do |abstract_model| %>
+      <% if authorized? :index, abstract_model %>
+        <% index_path = index_path(model_name: abstract_model.to_param) %>
+        <% row_class = "#{cycle("odd", "even")}#{" link" if index_path} #{abstract_model.param_key}_links" %>
+        <tr class="<%= row_class %>" data-link="<%= index_path %>" style="vertical-align: middle; height: 120px;">
+          <% last_created = @most_recent_created[abstract_model.model.name] %>
+          <% active = last_created.try(:today?) %>
+          <td style="vertical-align: middle;">
+            <span class="show"><%= link_to abstract_model.config.label_plural, index_path %></span>
+          </td>
+          <td style="vertical-align: middle;">
+            <% if last_created %>
+              <%= t "admin.misc.time_ago", time: time_ago_in_words(last_created), default: "#{time_ago_in_words(last_created)} #{t("admin.misc.ago")}" %>
+            <% end %>
+          </td>
+          <td style="vertical-align: middle;">
+            <% count = @count[abstract_model.model.name] %>
+            <% total = @count.values.sum %>
+            <!-- 环形图占比（总占比） -->
+            <% pie_percent = total > 0 ? ((count.to_f / total) * 100).round(1) : 0 %>
+            <!-- 进度条占比（按实际比例分布） -->
+            <% progress_percent = total > 0 ? ((count.to_f / @max) * 100).round(1) : 0 %>
+            <!-- 统一的颜色指示器 -->
+            <% indicator_color = get_indicator(progress_percent) %>
+
+            <!-- 1. 扇形图 -->
+            <div style="width: 80px; height: 80px; margin: 0 auto;">
+              <canvas id="pieChart-<%= abstract_model.param_key %>"></canvas>
+            </div>
+            <!-- 数值+占比文本 -->
+            <div class="text-center mt-1 text-sm">
+              <%= count %> (<%= pie_percent %>%）
+            </div>
+            <!-- 2. 动态进度条（按比例分布） -->
+            <div class="progress-container">
+              <div class="<%= active ? 'active progress-bar-striped ' : '' %>progress" style="margin-bottom:0px; height: 8px;">
+                <div
+                  class="bg-<%= indicator_color %> progress-bar animate-width-to"
+                  data-animate-length="<%= ([1.0, progress_percent].max.to_i * 20) %>"
+                  data-animate-width-to="<%= [1.0, progress_percent].max.to_i %>%"
+                  style="width:2%; transition-duration: calc(var(--animate-length) * 1ms);"
+                ></div>
+              </div>
+            </div>
+
+            <!-- 初始化扇形图 -->
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const ctx = document.getElementById('pieChart-<%= abstract_model.param_key %>').getContext('2d');
+
+                    // 统一的颜色映射
+                    const colorMap = {
+                        'success': '#28a745',
+                        'warning': '#ffc107',
+                        'danger': '#dc3545'
+                    };
+                    const chartColor = colorMap['<%= indicator_color %>'] || '#6c757d';
+
+                    new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            datasets: [{
+                                data: [<%= count %>, <%= total - count %>],
+                                backgroundColor: [
+                                    chartColor,
+                                    '#e9ecef'
+                                ],
+                                borderWidth: 0,
+                                cutout: '70%'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: (context) => context.raw === <%= count %> ? `<%= abstract_model.config.label_plural %>: ${context.raw}` : '其他'
+                                    }
+                                }
+                            },
+                            animation: {
+                                duration: <%= ([1.0, pie_percent].max.to_i * 20) %>,
+                                easing: 'easeOutQuart'
+                            }
+                        }
+                    });
+
+                    // 初始化进度条动画
+                    const progressBar = document.querySelector('#pieChart-<%= abstract_model.param_key %>').closest('td').querySelector('.animate-width-to');
+                    if (progressBar) {
+                        const targetWidth = progressBar.dataset.animateWidthTo;
+                        const animateLength = progressBar.dataset.animateLength;
+                        progressBar.style.setProperty('--animate-length', animateLength);
+                        setTimeout(() => progressBar.style.width = targetWidth, 10);
+                    }
+                });
+            </script>
+          </td>
+          <td class="links" style="vertical-align: middle;">
+            <ul class="nav d-inline list-inline"><%= menu_for :collection, abstract_model, nil, true %></ul>
+          </td>
+        </tr>
+      <% end %>
+    <% end %>
+    </tbody>
+  </table>
+
+  <!-- 初始化柱状图 -->
+  <script>
+      document.addEventListener('DOMContentLoaded', () => {
+          // 准备柱状图数据
+          const models = [
+              <% @abstract_models.each do |abstract_model| %>
+              <% if authorized? :index, abstract_model %>
+              {
+                  name: '<%= abstract_model.config.label_plural %>',
+                  count: <%= @count[abstract_model.model.name] || 0 %>,
+                  color: '<%= get_indicator(((@count[abstract_model.model.name] || 0).to_f / @max) * 100) %>'
+              },
+              <% end %>
+              <% end %>
+          ];
+
+          const barCtx = document.getElementById('barChart').getContext('2d');
+
+          // 根据颜色指示器获取对应的颜色
+          function getBarColor(indicator) {
+              const colorMap = {
+                  'success': '#28a745',
+                  'warning': '#ffc107',
+                  'danger': '#dc3545'
+              };
+              return colorMap[indicator] || '#6c757d';
+          }
+
+          new Chart(barCtx, {
+              type: 'bar',
+              data: {
+                  labels: models.map(model => model.name),
+                  datasets: [{
+                      label: '<%= t('admin.dashboard.record_count') %>',
+                      data: models.map(model => model.count),
+                      backgroundColor: models.map(model => getBarColor(model.color)),
+                      borderColor: models.map(model => getBarColor(model.color)),
+                      borderWidth: 1,
+                      borderRadius: 4,
+                      barThickness: 12, // 减小柱状图宽度
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: {
+                          display: false
+                      },
+                      tooltip: {
+                          callbacks: {
+                              label: function(context) {
+                                  const count = context.raw;
+                                  const total = <%= @count.values.sum %>;
+                                  const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                                  return `${context.dataset.label}: ${count} (${percentage}%)`;
+                              }
+                          }
+                      }
+                  },
+                  scales: {
+                      y: {
+                          beginAtZero: true,
+                          title: {
+                              display: true,
+                              text: '<%= t('admin.dashboard.record_count') %>'
+                          },
+                          ticks: {
+                              stepSize: Math.ceil(<%= @max %> / 10),
+                              font: {
+                                  size: 10 // 减小字体
+                              }
+                          }
+                      },
+                      x: {
+                          title: {
+                              display: true,
+                              text: '<%= t('admin.dashboard.data_models') %>'
+                          },
+                          ticks: {
+                              maxRotation: 45,
+                              minRotation: 45,
+                              font: {
+                                  size: 9 // 减小字体
+                              }
+                          }
+                      }
+                  }
+              }
+          });
+      });
+  </script>
+<% end %>
+
+<% if @history && authorized?(:history_index) %>
+  <div class="block" id="block-tables">
+    <div class="content">
+      <h2><%= t("admin.actions.history_index.menu") %></h2>
+      <%= render partial: 'rails_admin/main/dashboard_history' %>
+    </div>
+  </div>
+<% end %>
