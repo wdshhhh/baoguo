@@ -24,6 +24,7 @@
     "echarts": "^6.0.0",
     "element-plus": "^2.6.3",
     "jsbarcode": "^3.11.6",
+    "mini-css-extract-plugin": "^2.10.2",
     "pinia": "^2.1.7",
     "qrcode": "^1.5.3",
     "rails_admin": "3.3.0",

@@ -148,7 +148,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useStore } from '../../stores/user'
+import { useUserStore } from '../../stores/user'
 import { 
   NavBar, Card, Button, Icon, Image, Tabbar, TabbarItem, 
   NoticeBar, Popup, Field, Toast, Dialog 
@@ -170,7 +170,7 @@ export default {
   },
   setup() {
     const router = useRouter()
-    const userStore = useStore()
+    const userStore = useUserStore()
     
     const activeTab = ref('home')
     const todayStats = ref({})

@@ -1,0 +1,37 @@
+
+.settings[data-v-6cc4a674] {
+  padding: 0;
+}
+.card-header[data-v-6cc4a674] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.section-header[data-v-6cc4a674] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.section-header h3[data-v-6cc4a674] {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+.dialog-footer[data-v-6cc4a674] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.section[data-v-6cc4a674] {
+  padding: 20px;
+}
+.el-form-item[data-v-6cc4a674] {
+  margin-bottom: 20px;
+}
+.el-divider[data-v-6cc4a674] {
+  margin: 20px 0;
+}
+
+
+/*# sourceMappingURL=443.css.map*/

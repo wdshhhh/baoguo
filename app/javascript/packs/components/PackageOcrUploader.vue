@@ -42,6 +42,23 @@
       style="margin-top: 10px;"
     />
     
+    <!-- 一键创建按钮 -->
+    <div v-if="ocrResult && !recognizing" class="auto-create-section" style="margin-top: 10px;">
+      <el-button 
+        type="success" 
+        :loading="creatingPackage" 
+        @click="autoCreatePackage"
+        size="small"
+        class="auto-create-button"
+      >
+        <el-icon><Plus /></el-icon>
+        一键创建包裹
+      </el-button>
+      <span class="create-tip" style="margin-left: 10px; font-size: 12px; color: #666;">
+        点击直接创建包裹，无需手动填写
+      </span>
+    </div>
+    
     <!-- 错误信息 -->
     <el-alert
       v-if="errorMessage"
@@ -56,16 +73,18 @@
 </template>
 
 <script>
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Camera, Plus } from '@element-plus/icons-vue'
 import axios from 'axios'
 
 export default {
   name: 'PackageOcrUploader',
-  emits: ['ocr-result'],
+  emits: ['ocr-result', 'package-created'],
   data() {
     return {
       uploading: false,
       recognizing: false,
+      creatingPackage: false,
       previewImage: null,
       ocrResult: null,
       errorMessage: '',
@@ -215,6 +234,85 @@ export default {
     // 清空错误
     clearError() {
       this.errorMessage = ''
+    },
+    
+    // 一键创建包裹
+    async autoCreatePackage() {
+      if (!this.ocrResult) {
+        ElMessage.warning('请先完成OCR识别')
+        return
+      }
+      
+      try {
+        this.creatingPackage = true
+        
+        // 构建包裹数据
+        const packageData = {
+          tracking_number: this.ocrResult.tracking_number || '',
+          recipient_name: this.ocrResult.recipient_name || '',
+          recipient_phone: this.ocrResult.recipient_phone || '',
+          recipient_address: this.ocrResult.recipient_address || '',
+          package_type: 'normal',
+          weight: 1.0,
+          storage_location: 'A区',
+          remark: `通过OCR自动识别创建，识别置信度: ${Math.round((this.ocrResult.confidence || 0) * 100)}%`
+        }
+        
+        // 验证必填字段
+        if (!packageData.tracking_number) {
+          throw new Error('OCR未识别到运单号，请手动输入')
+        }
+        if (!packageData.recipient_name) {
+          throw new Error('OCR未识别到收件人姓名，请手动输入')
+        }
+        if (!packageData.recipient_phone) {
+          throw new Error('OCR未识别到收件人手机号，请手动输入')
+        }
+        
+        // 确认创建
+        await ElMessageBox.confirm(
+          `确定要创建包裹吗？\n\n运单号: ${packageData.tracking_number}\n收件人: ${packageData.recipient_name}\n手机号: ${packageData.recipient_phone}`,
+          '确认创建包裹',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        )
+        
+        // 调用创建包裹API
+        const response = await axios.post('/api/v1/packages', packageData)
+        
+        if (response.data && response.data.success) {
+          ElMessage.success('包裹创建成功！')
+          this.$emit('package-created', response.data.data)
+          this.clearResult() // 清空结果
+        } else {
+          throw new Error(response.data?.error || '创建失败')
+        }
+        
+      } catch (error) {
+        console.error('创建包裹失败:', error)
+        
+        if (error === 'cancel' || error === 'close') {
+          // 用户取消操作，不显示错误
+          return
+        }
+        
+        if (error.response?.status === 422) {
+          // 验证错误
+          const errors = error.response.data?.errors || []
+          if (errors.length > 0) {
+            ElMessage.error(`创建失败: ${errors.join(', ')}`)
+          } else {
+            ElMessage.error('创建失败: 数据验证错误')
+          }
+        } else {
+          ElMessage.error(error.message || '创建包裹失败，请重试')
+        }
+      } finally {
+        this.creatingPackage = false
+      }
     }
   },
   

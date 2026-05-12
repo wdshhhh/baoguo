@@ -21,6 +21,10 @@ const routes = [
     redirect: '/dashboard'
   },
   {
+    path: '/pc',
+    redirect: '/dashboard'
+  },
+  {
     path: '/login',
     name: 'Login',
     component: Login,
@@ -63,6 +67,12 @@ const routes = [
     component: Settings,
     meta: { requiresAuth: true, title: '系统设置' }
   },
+  {
+    path: '/pc/settings',
+    name: 'PcSettings',
+    component: Settings,
+    meta: { requiresAuth: true, title: '系统设置' }
+  },
   // 移动端路由
   {
     path: '/mobile',
@@ -97,8 +107,8 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('auth_token')
-  const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}')
+  const token = localStorage.getItem('token')
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null') || {}
   
   // 设置页面标题
   if (to.meta.title) {

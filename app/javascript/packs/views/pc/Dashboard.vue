@@ -153,10 +153,10 @@ export default {
     const currentDate = ref(new Date().toLocaleDateString('zh-CN'))
     
     const stats = ref([
-      { title: '今日入库', value: 0, color: '#409EFF', icon: 'Goods' },
-      { title: '今日出库', value: 0, color: '#67C23A', icon: 'TakeawayBox' },
-      { title: '异常包裹', value: 0, color: '#E6A23C', icon: 'Warning' },
-      { title: '待处理', value: 0, color: '#F56C6C', icon: 'Clock' }
+      { title: '今日入库', value: 0, color: '#409EFF', icon: Goods },
+      { title: '今日出库', value: 0, color: '#67C23A', icon: TakeawayBox },
+      { title: '异常包裹', value: 0, color: '#E6A23C', icon: Warning },
+      { title: '待处理', value: 0, color: '#F56C6C', icon: Clock }
     ])
     
     const recentActivities = ref([])

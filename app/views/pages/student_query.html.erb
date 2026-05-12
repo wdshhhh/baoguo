@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>包裹查询 - 菜鸟驿站</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #409EFF 0%, #67c23a 100%);
+      padding: 30px 20px;
+      border-radius: 0 0 20px 20px;
+      color: white;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .search-box {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+    
+    .search-box label {
+      display: block;
+      font-size: 14px;
+      color: #606266;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      border: 2px solid #e4e7ed;
+      border-radius: 8px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    
+    .search-box input:focus {
+      border-color: #409EFF;
+    }
+    
+    .search-box input::placeholder {
+      color: #909399;
+    }
+    
+    .search-btn {
+      width: 100%;
+      padding: 15px;
+      margin-top: 15px;
+      background: linear-gradient(135deg, #409EFF 0%, #67c23a 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+    
+    .search-btn:hover {
+      opacity: 0.9;
+    }
+    
+    .search-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .package-list {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    
+    .package-item {
+      padding: 16px;
+      border-bottom: 1px solid #f2f6fc;
+    }
+    
+    .package-item:last-child {
+      border-bottom: none;
+    }
+    
+    .package-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .tracking-number {
+      font-size: 15px;
+      font-weight: 600;
+      color: #303133;
+    }
+    
+    .courier-company {
+      font-size: 12px;
+      color: #409EFF;
+      background: #ecf5ff;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    
+    .package-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #606266;
+    }
+    
+    .status-tag {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .status-tag.stored {
+      background: #e8f5e9;
+      color: #67c23a;
+    }
+    
+    .status-tag.picked_up {
+      background: #fff3e0;
+      color: #e6a23c;
+    }
+    
+    .status-tag.pending {
+      background: #f0f2f5;
+      color: #909399;
+    }
+    
+    .status-tag.exception {
+      background: #fef0f0;
+      color: #f56c6c;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #909399;
+    }
+    
+    .empty-state img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+    
+    .empty-state p {
+      font-size: 14px;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: #409EFF;
+    }
+    
+    .error-message {
+      background: #fef0f0;
+      color: #f56c6c;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      text-align: center;
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 30px 20px;
+      color: #909399;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <div class="header">
+      <h1>📦 包裹查询</h1>
+      <p>输入手机号后4位查询您的包裹</p>
+    </div>
+    
+    <div class="search-box">
+      <label>手机号后4位</label>
+      <input 
+        type="tel" 
+        v-model="phoneSuffix" 
+        placeholder="请输入手机号后4位"
+        maxlength="4"
+        @keyup.enter="searchPackages"
+      />
+      <button class="search-btn" :disabled="!phoneSuffix || loading" @click="searchPackages">
+        {{ loading ? '查询中...' : '查询包裹' }}
+      </button>
+    </div>
+    
+    <div v-if="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+    
+    <div v-if="loading" class="loading">
+      查询中，请稍候...
+    </div>
+    
+    <div v-else-if="packages.length > 0" class="package-list">
+      <div v-for="pkg in packages" :key="pkg.id" class="package-item">
+        <div class="package-header">
+          <span class="tracking-number">{{ pkg.tracking_number }}</span>
+          <span class="courier-company">{{ pkg.courier_company || '未知快递' }}</span>
+        </div>
+        <div class="package-info">
+          <span>状态：<span :class="['status-tag', pkg.status]">{{ getStatusName(pkg.status) }}</span></span>
+          <span>{{ pkg.arrival_time }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div v-else-if="searched && packages.length === 0" class="empty-state">
+      <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+      <p>暂无包裹记录</p>
+      <p style="font-size: 12px; margin-top: 5px; color: #c0c4cc;">请确认手机号后4位是否正确</p>
+    </div>
+    
+    <div class="footer">
+      <p>© 2026 菜鸟驿站</p>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, reactive } = Vue
+
+    createApp({
+      setup() {
+        const phoneSuffix = ref('')
+        const packages = ref([])
+        const loading = ref(false)
+        const searched = ref(false)
+        const errorMessage = ref('')
+        
+        const statusNames = {
+          'pending': '待入库',
+          'stored': '已入库',
+          'picked_up': '已取件',
+          'exception': '异常'
+        }
+        
+        const getStatusName = (status) => {
+          return statusNames[status] || status
+        }
+        
+        const searchPackages = async () => {
+          if (!phoneSuffix.value || phoneSuffix.value.length < 4) {
+            errorMessage.value = '请输入完整的手机号后4位'
+            return
+          }
+          
+          loading.value = true
+          searched.value = true
+          errorMessage.value = ''
+          
+          try {
+            const response = await axios.get('/api/v1/packages/search_by_phone_suffix', {
+              params: {
+                suffix: phoneSuffix.value
+              }
+            })
+            
+            if (response.data && response.data.data) {
+              packages.value = response.data.data.map(pkg => ({
+                ...pkg,
+                arrival_time: pkg.stored_at ? formatTime(pkg.stored_at) : '尚未到达'
+              }))
+            } else {
+              packages.value = []
+            }
+          } catch (error) {
+            console.error('查询失败:', error)
+            errorMessage.value = '查询失败，请稍后重试'
+            packages.value = []
+          } finally {
+            loading.value = false
+          }
+        }
+        
+        const formatTime = (timeStr) => {
+          try {
+            const date = new Date(timeStr)
+            return `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+          } catch {
+            return timeStr
+          }
+        }
+        
+        return {
+          phoneSuffix,
+          packages,
+          loading,
+          searched,
+          errorMessage,
+          getStatusName,
+          searchPackages
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

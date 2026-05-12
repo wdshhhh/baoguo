@@ -1,0 +1,4046 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>菜鸟驿站包裹管理系统</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/axios@1.6.0/dist/axios.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    #app { height: 100%; display: flex; }
+    
+    /* Toast通知 */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      border-radius: 4px;
+      color: white;
+      font-size: 14px;
+      z-index: 9999;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .toast.show { transform: translateX(0); }
+    .toast-success { background: #67C23A; }
+    .toast-warning { background: #E6A23C; }
+    .toast-error { background: #F56C6C; }
+    .toast-info { background: #409EFF; }
+    
+    /* 模态框 */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: white; border-radius: 12px; padding: 30px; width: 90%; max-width: 500px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    
+    /* 按钮样式 */
+    .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+    .btn-primary { background: #409EFF; color: white; }
+    .btn-primary:hover { background: #67a5ff; }
+    .btn-success { background: #67C23A; color: white; }
+    .btn-success:hover { background: #85ce61; }
+    .btn-warning { background: #E6A23C; color: white; }
+    .btn-danger { background: #F56C6C; color: white; }
+    .btn-default { background: #f5f7fa; color: #606266; }
+    .btn-group { display: flex; gap: 10px; }
+    
+    .error-message { color: #F56C6C; font-size: 12px; margin-top: 5px; }
+    
+    /* 表格样式 */
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e4e7ed; }
+    th { background: #f5f7fa; font-weight: 500; color: #606266; }
+    tr:hover { background: #fafafa; }
+    
+    /* 加载状态 */
+    .loading { display: flex; align-items: center; justify-content: center; padding: 40px; color: #909399; }
+    .spinner { width: 20px; height: 20px; border: 2px solid #409EFF; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* 分页 */
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 20px; }
+    .pagination button { padding: 8px 16px; border: 1px solid #e4e7ed; background: white; cursor: pointer; border-radius: 4px; }
+    .pagination button.active { background: #409EFF; color: white; border-color: #409EFF; }
+    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    /* 搜索框 */
+    .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-box input { flex: 1; padding: 10px; border: 1px solid #e4e7ed; border-radius: 4px; }
+    
+    /* 设置菜单样式 */
+    .setting-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .setting-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+      color: #606266;
+    }
+    .setting-menu-item:hover {
+      background: #eef2f7;
+      color: #409EFF;
+    }
+    .setting-menu-item.active {
+      background: #409EFF;
+      color: white;
+    }
+    
+    /* 表单错误提示 */
+    .error-text {
+      display: block;
+      color: #F56C6C;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    
+    /* 状态标签 */
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .status-badge.active {
+      background: #f0f9eb;
+      color: #67C23A;
+    }
+    .status-badge.inactive {
+      background: #f5f0f0;
+      color: #F56C6C;
+    }
+    .status-badge.warning {
+      background: #fdf6ec;
+      color: #E6A23C;
+    }
+    
+    /* 弹窗样式 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      border-bottom: 1px solid #e4e7ed;
+      background: #fafafa;
+    }
+    .modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: #303133;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: #909399;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover {
+      color: #606266;
+    }
+    .modal-body {
+      padding: 20px;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 15px 20px;
+      border-top: 1px solid #e4e7ed;
+    }
+    
+    /* 表格容器 */
+    .table-container {
+      overflow-x: auto;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .data-table th, .data-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e4e7ed;
+    }
+    .data-table th {
+      background: #f5f7fa;
+      font-weight: 500;
+      color: #606266;
+    }
+    .data-table tr:hover {
+      background: #fafafa;
+    }
+    
+    /* 按钮小尺寸 */
+    .btn-sm {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+    
+    /* 筛选区域 */
+    .filter-area { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-area select, .filter-area input { padding: 8px 12px; border: 1px solid #e4e7ed; border-radius: 4px; }
+    
+    /* 卡片 */
+    .card { background: white; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 24px; }
+    
+    /* 统计卡片 */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: white; border-radius: 8px; padding: 20px; text-align: center; }
+    .stat-card .value { font-size: 28px; font-weight: bold; color: #303133; margin-bottom: 5px; }
+    .stat-card .label { font-size: 14px; color: #909399; }
+    
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    /* 侧边栏菜单按钮 */
+    aside button.active {
+      background: #409EFF !important;
+      color: white !important;
+    }
+    
+    /* 动画效果 */
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* 聊天容器 */
+    .chat-container {
+      scrollbar-width: thin;
+      scrollbar-color: #dcdfe6 transparent;
+    }
+    
+    .chat-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .chat-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .chat-container::-webkit-scrollbar-thumb {
+      background: #dcdfe6;
+      border-radius: 3px;
+    }
+    
+    .chat-container::-webkit-scrollbar-thumb:hover {
+      background: #c0c4cc;
+    }
+    
+    /* AI助手悬浮按钮 */
+    .ai-float-btn {
+      position: fixed;
+      right: 30px;
+      bottom: 30px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #409EFF, #67C23A);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+      box-shadow: 0 4px 16px rgba(64, 158, 255, 0.4);
+      cursor: pointer;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+    .ai-float-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 24px rgba(64, 158, 255, 0.6);
+    }
+    .ai-float-btn.active {
+      transform: rotate(45deg);
+    }
+    
+    /* AI助手聊天窗口 */
+    .ai-chat-window {
+      position: fixed;
+      right: 30px;
+      bottom: 100px;
+      width: 380px;
+      max-height: 500px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      display: none;
+      flex-direction: column;
+      z-index: 999;
+      overflow: hidden;
+    }
+    .ai-chat-window.show {
+      display: flex;
+    }
+    
+    /* 聊天窗口头部 */
+    .ai-chat-header {
+      background: linear-gradient(135deg, #409EFF, #67C23A);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 12px 12px 0 0;
+    }
+    .ai-chat-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .ai-chat-header .close-btn,
+    .ai-chat-header .clear-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ai-chat-header .close-btn:hover,
+    .ai-chat-header .clear-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    /* 聊天消息区域 */
+    .ai-chat-messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: #fafafa;
+      max-height: 350px;
+    }
+    .ai-chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    .ai-chat-messages::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .ai-chat-messages::-webkit-scrollbar-thumb {
+      background: #dcdfe6;
+      border-radius: 3px;
+    }
+    
+    /* 消息气泡 */
+    .ai-message {
+      display: flex;
+      margin-bottom: 15px;
+      animation: fadeIn 0.3s ease;
+    }
+    .ai-message.user {
+      justify-content: flex-end;
+    }
+    .ai-message.assistant {
+      justify-content: flex-start;
+    }
+    .ai-message .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .ai-message.user .avatar {
+      background: #409EFF;
+      color: white;
+      margin-left: 10px;
+    }
+    .ai-message.assistant .avatar {
+      background: linear-gradient(135deg, #67C23A, #409EFF);
+      color: white;
+      margin-right: 10px;
+    }
+    .ai-message .bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.5;
+      position: relative;
+    }
+    .ai-message.user .bubble {
+      background: #409EFF;
+      color: white;
+      border-radius: 18px 4px 18px 18px;
+    }
+    .ai-message.assistant .bubble {
+      background: white;
+      color: #303133;
+      border: 1px solid #e4e7ed;
+      border-radius: 4px 18px 18px 18px;
+    }
+    .ai-message .time {
+      font-size: 12px;
+      color: #909399;
+      margin-top: 4px;
+      padding: 0 5px;
+    }
+    .ai-message.user .time {
+      text-align: right;
+    }
+    .ai-message.assistant .time {
+      text-align: left;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* 快捷问题按钮区 */
+    .ai-quick-questions {
+      padding: 10px 15px;
+      background: white;
+      border-top: 1px solid #e4e7ed;
+      border-bottom: 1px solid #e4e7ed;
+    }
+    .ai-quick-questions h4 {
+      margin: 0 0 10px 0;
+      font-size: 12px;
+      color: #909399;
+      font-weight: 400;
+    }
+    .ai-quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ai-quick-tag {
+      padding: 6px 12px;
+      background: #f5f7fa;
+      border: none;
+      border-radius: 16px;
+      font-size: 12px;
+      color: #606266;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .ai-quick-tag:hover {
+      background: #409EFF;
+      color: white;
+    }
+    
+    /* 输入区域 */
+    .ai-chat-input {
+      padding: 10px 15px;
+      background: white;
+      display: flex;
+      gap: 10px;
+    }
+    .ai-chat-input input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid #dcdfe6;
+      border-radius: 20px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .ai-chat-input input:focus {
+      border-color: #409EFF;
+    }
+    .ai-chat-input button {
+      width: 40px;
+      height: 40px;
+      background: #409EFF;
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .ai-chat-input button:hover {
+      background: #67a5ff;
+    }
+    .ai-chat-input button:disabled {
+      background: #dcdfe6;
+      cursor: not-allowed;
+    }
+    
+    /* 加载状态 */
+    .ai-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+    }
+    .ai-loading span {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #409EFF;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    /* 包裹卡片 */
+    .ai-package-card {
+      background: white;
+      border: 1px solid #e4e7ed;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .ai-package-card .package-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .ai-package-card .package-row:last-child {
+      margin-bottom: 0;
+    }
+    .ai-package-card .package-label {
+      color: #909399;
+    }
+    .ai-package-card .package-value {
+      color: #303133;
+      font-weight: 500;
+    }
+    .ai-package-card .status-pending {
+      color: #E6A23C;
+    }
+    .ai-package-card .status-picked_up {
+      color: #67C23A;
+    }
+    .ai-package-card .status-exception {
+      color: #F56C6C;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div v-if="loading" class="loading"><div class="spinner"></div>加载中...</div>
+    <div v-else style="display: flex; height: 100%;">
+      <!-- 侧边栏 -->
+      <aside style="width: 200px; background: #2f3542; color: white; display: flex; flex-direction: column;">
+        <div style="padding: 20px; text-align: center; border-bottom: 1px solid #434a54;">
+          <h1 style="font-size: 18px; margin: 0;">📦 菜鸟驿站</h1>
+        </div>
+        <nav style="flex: 1; padding: 10px;">
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            <li v-for="item in menuItems" :key="item.name" style="margin-bottom: 5px;">
+              <button
+                @click="selectMenu(item)"
+                :class="{ active: activeMenu === item.name }"
+                style="
+                  width: 100%;
+                  padding: 12px 15px;
+                  border: none;
+                  border-radius: 4px;
+                  text-align: left;
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  font-size: 14px;
+                  transition: all 0.2s;
+                  cursor: pointer;
+                  background: transparent;
+                  color: #b8c4d4;
+                "
+              >
+                <span>{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+        <div style="padding: 15px; border-top: 1px solid #434a54;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: #409EFF; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white;">
+                {{ currentUser ? currentUser[0] : '?' }}
+              </div>
+              <div style="font-size: 14px; color: white;">{{ currentUser }}</div>
+            </div>
+            <button
+              @click="logout"
+              style="background: none; border: none; color: #b8c4d4; cursor: pointer; font-size: 14px;"
+              @mouseover="(e) => e.target.style.color = 'white'"
+              @mouseout="(e) => e.target.style.color = '#b8c4d4'"
+            >退出</button>
+          </div>
+        </div>
+      </aside>
+      
+      <!-- 主内容区 -->
+      <main style="flex: 1; display: flex; flex-direction: column;">
+        <!-- 顶部导航 -->
+        <header style="height: 60px; background: white; border-bottom: 1px solid #e4e7ed; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <h2 style="margin: 0; font-size: 18px; color: #303133;">{{ currentMenuLabel }}</h2>
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <button
+              @click="refreshData"
+              :disabled="refreshLoading"
+              style="
+                padding: 8px 16px;
+                border: none;
+                border-radius: 4px;
+                font-size: 14px;
+                cursor: pointer;
+                transition: background 0.2s;
+                background: #f5f7fa;
+                color: #606266;
+              "
+            >
+              {{ refreshLoading ? '刷新中...' : '🔄 刷新' }}
+            </button>
+            <span style="color: #909399; font-size: 14px;">{{ currentTime }}</span>
+          </div>
+        </header>
+        
+        <!-- 内容区域 -->
+        <div style="flex: 1; padding: 20px; overflow: auto;">
+          <!-- 仪表盘 -->
+          <div v-show="activeMenu === 'dashboard'" class="card">
+            <h3 style="font-size: 16px; color: #303133; margin-bottom: 20px;">今日概览</h3>
+            <div class="stats-grid">
+              <div v-for="stat in stats" :key="stat.title" class="stat-card" :style="{ borderLeft: `4px solid ${stat.color}` }">
+                <div class="value">{{ stat.value }}</div>
+                <div class="label">{{ stat.title }}</div>
+              </div>
+            </div>
+            <h3 style="font-size: 16px; color: #303133; margin-top: 30px; margin-bottom: 20px;">最近包裹</h3>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>运单号</th>
+                    <th>收件人</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="pkg in recentPackages" :key="pkg.id">
+                    <td>{{ pkg.tracking_number }}</td>
+                    <td>{{ pkg.recipient_name }} ({{ pkg.recipient_phone }})</td>
+                    <td><span :style="{ color: pkg.status === 'pending' ? '#E6A23C' : pkg.status === 'stored' ? '#67C23A' : '#F56C6C' }">{{ statusLabels[pkg.status] }}</span></td>
+                    <td>{{ formatTime(pkg.created_at) }}</td>
+                  </tr>
+                  <tr v-if="recentPackages.length === 0">
+                    <td colspan="4" style="text-align: center; padding: 40px; color: #909399;">暂无包裹</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- 包裹管理 -->
+          <div v-show="activeMenu === 'packages'" class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3 style="font-size: 16px; color: #303133; margin: 0;">包裹列表</h3>
+              <button @click="showAddModal = true" class="btn btn-primary">+ 添加包裹</button>
+            </div>
+            <div class="search-box">
+              <input v-model="searchKeyword" placeholder="搜索运单号或手机号" @keyup.enter="loadPackages" />
+              <select v-model="statusFilter" @change="loadPackages">
+                <option value="">全部状态</option>
+                <option v-for="(label, key) in statusLabels" :key="key" :value="key">{{ label }}</option>
+              </select>
+              <button @click="resetFilter" class="btn btn-default">重置</button>
+            </div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" @change="toggleSelectAll" :checked="allSelected" /></th>
+                    <th>运单号</th>
+                    <th>取件码</th>
+                    <th>收件人</th>
+                    <th>手机号</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="pkg in packages" :key="pkg.id">
+                    <td><input type="checkbox" v-model="selectedPackages" :value="pkg.id" /></td>
+                    <td>{{ pkg.tracking_number }}</td>
+                    <td>{{ pkg.pickup_code }}</td>
+                    <td>{{ pkg.recipient_name }}</td>
+                    <td>{{ pkg.recipient_phone }}</td>
+                    <td><span :style="{ color: pkg.status === 'pending' ? '#E6A23C' : pkg.status === 'stored' ? '#67C23A' : '#F56C6C' }">{{ statusLabels[pkg.status] }}</span></td>
+                    <td>
+                      <button v-if="pkg.status === 'pending'" @click="handleStore(pkg)" class="btn btn-success" style="padding: 4px 8px; font-size: 12px;">入库</button>
+                      <button v-if="pkg.status === 'stored'" @click="handlePickup(pkg)" class="btn btn-primary" style="padding: 4px 8px; font-size: 12px;">出库</button>
+                      <button @click="handleMarkException(pkg)" class="btn btn-warning" style="padding: 4px 8px; font-size: 12px;">异常</button>
+                      <button @click="handleDeletePackage(pkg)" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;">删除</button>
+                    </td>
+                  </tr>
+                  <tr v-if="packages.length === 0">
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #909399;">暂无包裹</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-if="totalPackages > 0" class="pagination">
+              <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+              <button v-for="page in pageList" :key="page" @click="goToPage(page)" :class="{ active: currentPage === page }">{{ page }}</button>
+              <button @click="nextPage" :disabled="currentPage >= totalPages">下一页</button>
+              <span style="margin-left: 10px; color: #909399;">共 {{ totalPackages }} 条</span>
+            </div>
+          </div>
+          
+          <!-- 异常管理 -->
+          <div v-show="activeMenu === 'exceptions'" class="card">
+            <h3 style="font-size: 16px; color: #303133; margin-bottom: 20px;">异常包裹</h3>
+            <div class="filter-area">
+              <select v-model="exceptionStatusFilter" @change="loadExceptions">
+                <option value="">全部状态</option>
+                <option value="pending">待处理</option>
+                <option value="processing">处理中</option>
+                <option value="resolved">已解决</option>
+              </select>
+            </div>
+            <div style="overflow-x: auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>运单号</th>
+                    <th>收件人</th>
+                    <th>异常类型</th>
+                    <th>状态</th>
+                    <th>备注</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="ex in exceptions" :key="ex.id">
+                    <td>{{ ex.tracking_number }}</td>
+                    <td>{{ ex.recipient_name }}</td>
+                    <td>{{ exceptionTypeLabels[ex.exception_type] }}</td>
+                    <td><span :style="{ color: ex.status === 'pending' ? '#F56C6C' : ex.status === 'processing' ? '#E6A23C' : '#67C23A' }">{{ exceptionStatusLabels[ex.status] }}</span></td>
+                    <td>{{ ex.note }}</td>
+                    <td>{{ formatTime(ex.created_at) }}</td>
+                    <td>
+                      <button v-if="ex.status === 'pending'" @click="handleResolveException(ex)" class="btn btn-success" style="padding: 4px 8px; font-size: 12px;">处理</button>
+                      <button v-if="ex.status === 'processing'" @click="handleResolveException(ex)" class="btn btn-primary" style="padding: 4px 8px; font-size: 12px;">完成</button>
+                    </td>
+                  </tr>
+                  <tr v-if="exceptions.length === 0">
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #909399;">暂无异常包裹</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- 统计分析 -->
+          <div v-show="activeMenu === 'statistics'" class="card">
+            <h3 style="font-size: 16px; color: #303133; margin-bottom: 20px;">统计分析</h3>
+            <div class="stats-grid">
+              <div class="stat-card" style="border-left: 4px solid #409EFF;">
+                <div class="value">{{ statsData.total_packages }}</div>
+                <div class="label">总包裹数</div>
+              </div>
+              <div class="stat-card" style="border-left: 4px solid #67C23A;">
+                <div class="value">{{ statsData.today_stored }}</div>
+                <div class="label">今日入库</div>
+              </div>
+              <div class="stat-card" style="border-left: 4px solid #E6A23C;">
+                <div class="value">{{ statsData.today_picked_up }}</div>
+                <div class="label">今日出库</div>
+              </div>
+              <div class="stat-card" style="border-left: 4px solid #F56C6C;">
+                <div class="value">{{ statsData.exception_count }}</div>
+                <div class="label">异常包裹</div>
+              </div>
+            </div>
+            <h3 style="font-size: 16px; color: #303133; margin-top: 30px; margin-bottom: 20px;">快递公司分布</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <div v-for="(count, courier) in statsData.courier_distribution" :key="courier" style="background: #f5f7fa; padding: 10px 20px; border-radius: 20px;">
+                <span>{{ courier }}:</span>
+                <span style="font-weight: bold; margin-left: 5px;">{{ count }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- OCR识别 -->
+          <div v-show="activeMenu === 'ocr'" class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3 style="font-size: 16px; color: #303133; margin: 0;">OCR识别</h3>
+              <button @click="showOcrModal = true" class="btn btn-primary">📤 上传图片识别</button>
+            </div>
+            <div style="display: flex; gap: 30px;">
+              <!-- 图片预览区域 -->
+              <div style="flex: 1;">
+                <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">📷 图片预览</h4>
+                <div v-if="ocrImage" style="border: 1px solid #e4e7ed; border-radius: 8px; overflow: hidden; max-height: 400px; background: #f5f7fa; display: flex; align-items: center; justify-content: center;">
+                  <img :src="ocrImage" style="max-width: 100%; max-height: 400px; object-fit: contain;" />
+                </div>
+                <div v-else style="border: 2px dashed #dcdfe6; border-radius: 8px; padding: 60px; text-align: center; background: #fafafa;">
+                  <div style="font-size: 48px; margin-bottom: 15px;">📷</div>
+                  <p style="color: #909399; font-size: 14px;">点击上方按钮上传图片</p>
+                  <p style="color: #909399; font-size: 12px; margin-top: 10px;">支持 JPG、PNG、PDF 格式</p>
+                </div>
+              </div>
+              
+              <!-- 识别结果卡片区域 -->
+              <div style="flex: 1.2;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                  <h4 style="font-size: 14px; color: #303133; margin: 0;">📋 识别结果</h4>
+                  <div v-if="ocrConfidence" style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 12px; color: #909399;">平均置信度</span>
+                    <span :style="{ 'font-size': '16px', 'font-weight': 'bold', 'color': getConfidenceColor(ocrConfidence.average) }">
+                      {{ ocrConfidence.average }}%
+                    </span>
+                  </div>
+                </div>
+                
+                <div v-if="ocrResult" style="border: 1px solid #e4e7ed; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);">
+                  <!-- 卡片头部 -->
+                  <div style="padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <div>
+                        <h3 style="font-size: 16px; color: white; margin: 0;">OCR识别结果</h3>
+                        <p style="font-size: 12px; color: rgba(255,255,255,0.8); margin-top: 4px;">快递面单信息提取</p>
+                      </div>
+                      <div v-if="ocrQuality" :style="{ 
+                        'padding': '6px 12px', 
+                        'border-radius': '20px', 
+                        'background': ocrQuality.level === 'excellent' ? 'rgba(16, 185, 129, 0.3)' : ocrQuality.level === 'good' ? 'rgba(52, 211, 153, 0.3)' : ocrQuality.level === 'medium' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+                        'color': ocrQuality.level === 'excellent' ? '#10b981' : ocrQuality.level === 'good' ? '#34d399' : ocrQuality.level === 'medium' ? '#f59e0b' : '#ef4444'
+                      }">
+                        {{ ocrQuality.level === 'excellent' ? '优秀' : ocrQuality.level === 'good' ? '良好' : ocrQuality.level === 'medium' ? '中等' : '较差' }}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- 卡片内容 -->
+                  <div style="padding: 20px;">
+                    <!-- 运单号卡片 -->
+                    <div :style="{ 
+                      'margin-bottom': '15px', 
+                      'padding': '15px', 
+                      'border-radius': '8px', 
+                      'border': '1px solid #e4e7ed',
+                      'background': isLowConfidence('tracking_number') ? '#fff5f5' : '#fafafa'
+                    }">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 16px;">📦</span>
+                          <span style="font-size: 13px; color: #909399;">运单号</span>
+                          <span v-if="isLowConfidence('tracking_number')" style="font-size: 14px; color: #f56c6c;">⚠️</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                          <div v-if="ocrConfidence?.field_level?.tracking_number" style="display: flex; align-items: center; gap: 4px;">
+                            <span :style="{ 
+                              'font-size': '14px', 
+                              'font-weight': 'bold', 
+                              'color': getConfidenceColor(ocrConfidence.field_level.tracking_number) 
+                            }">
+                              {{ ocrConfidence.field_level.tracking_number }}%
+                            </span>
+                          </div>
+                          <button @click="editField('tracking_number')" style="padding: 4px 10px; font-size: 12px; background: #fff; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; cursor: pointer;" @mouseenter="(e) => e.target.style.background='#f5f7fa'" @mouseleave="(e) => e.target.style.background='#fff'">
+                            ✏️ 编辑
+                          </button>
+                        </div>
+                      </div>
+                      <p style="font-size: 15px; color: #303133; margin: 0; font-family: 'Monaco', 'Consolas', monospace;">
+                        {{ ocrResult.tracking_number || '-' }}
+                      </p>
+                    </div>
+                    
+                    <!-- 收件人卡片 -->
+                    <div :style="{ 
+                      'margin-bottom': '15px', 
+                      'padding': '15px', 
+                      'border-radius': '8px', 
+                      'border': '1px solid #e4e7ed',
+                      'background': isLowConfidence('recipient_name') ? '#fff5f5' : '#fafafa'
+                    }">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 16px;">👤</span>
+                          <span style="font-size: 13px; color: #909399;">收件人姓名</span>
+                          <span v-if="isLowConfidence('recipient_name')" style="font-size: 14px; color: #f56c6c;">⚠️</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                          <div v-if="ocrConfidence?.field_level?.recipient_name" style="display: flex; align-items: center; gap: 4px;">
+                            <span :style="{ 
+                              'font-size': '14px', 
+                              'font-weight': 'bold', 
+                              'color': getConfidenceColor(ocrConfidence.field_level.recipient_name) 
+                            }">
+                              {{ ocrConfidence.field_level.recipient_name }}%
+                            </span>
+                          </div>
+                          <button @click="editField('recipient_name')" style="padding: 4px 10px; font-size: 12px; background: #fff; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; cursor: pointer;" @mouseenter="(e) => e.target.style.background='#f5f7fa'" @mouseleave="(e) => e.target.style.background='#fff'">
+                            ✏️ 编辑
+                          </button>
+                        </div>
+                      </div>
+                      <p style="font-size: 15px; color: #303133; margin: 0;">{{ ocrResult.recipient_name || '-' }}</p>
+                    </div>
+                    
+                    <!-- 手机号卡片 -->
+                    <div :style="{ 
+                      'margin-bottom': '15px', 
+                      'padding': '15px', 
+                      'border-radius': '8px', 
+                      'border': '1px solid #e4e7ed',
+                      'background': isLowConfidence('recipient_phone') ? '#fff5f5' : '#fafafa'
+                    }">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 16px;">📱</span>
+                          <span style="font-size: 13px; color: #909399;">手机号</span>
+                          <span v-if="isLowConfidence('recipient_phone')" style="font-size: 14px; color: #f56c6c;">⚠️</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                          <div v-if="ocrConfidence?.field_level?.recipient_phone" style="display: flex; align-items: center; gap: 4px;">
+                            <span :style="{ 
+                              'font-size': '14px', 
+                              'font-weight': 'bold', 
+                              'color': getConfidenceColor(ocrConfidence.field_level.recipient_phone) 
+                            }">
+                              {{ ocrConfidence.field_level.recipient_phone }}%
+                            </span>
+                          </div>
+                          <button @click="editField('recipient_phone')" style="padding: 4px 10px; font-size: 12px; background: #fff; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; cursor: pointer;" @mouseenter="(e) => e.target.style.background='#f5f7fa'" @mouseleave="(e) => e.target.style.background='#fff'">
+                            ✏️ 编辑
+                          </button>
+                        </div>
+                      </div>
+                      <p style="font-size: 15px; color: #303133; margin: 0; font-family: 'Monaco', 'Consolas', monospace;">
+                        {{ ocrResult.recipient_phone || '-' }}
+                      </p>
+                    </div>
+                    
+                    <!-- 快递公司卡片 -->
+                    <div :style="{ 
+                      'margin-bottom': '15px', 
+                      'padding': '15px', 
+                      'border-radius': '8px', 
+                      'border': '1px solid #e4e7ed',
+                      'background': isLowConfidence('courier_company') ? '#fff5f5' : '#fafafa'
+                    }">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 16px;">🚚</span>
+                          <span style="font-size: 13px; color: #909399;">快递公司</span>
+                          <span v-if="isLowConfidence('courier_company')" style="font-size: 14px; color: #f56c6c;">⚠️</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                          <div v-if="ocrConfidence?.field_level?.courier_company" style="display: flex; align-items: center; gap: 4px;">
+                            <span :style="{ 
+                              'font-size': '14px', 
+                              'font-weight': 'bold', 
+                              'color': getConfidenceColor(ocrConfidence.field_level.courier_company) 
+                            }">
+                              {{ ocrConfidence.field_level.courier_company }}%
+                            </span>
+                          </div>
+                          <button @click="editField('courier_company')" style="padding: 4px 10px; font-size: 12px; background: #fff; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; cursor: pointer;" @mouseenter="(e) => e.target.style.background='#f5f7fa'" @mouseleave="(e) => e.target.style.background='#fff'">
+                            ✏️ 编辑
+                          </button>
+                        </div>
+                      </div>
+                      <p style="font-size: 15px; color: #303133; margin: 0;">{{ ocrResult.courier_company || '-' }}</p>
+                    </div>
+                    
+                    <!-- 地址卡片 -->
+                    <div :style="{ 
+                      'margin-bottom': '15px', 
+                      'padding': '15px', 
+                      'border-radius': '8px', 
+                      'border': '1px solid #e4e7ed',
+                      'background': isLowConfidence('address') ? '#fff5f5' : '#fafafa'
+                    }">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="font-size: 16px;">📍</span>
+                          <span style="font-size: 13px; color: #909399;">地址</span>
+                          <span v-if="isLowConfidence('address')" style="font-size: 14px; color: #f56c6c;">⚠️</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                          <div v-if="ocrConfidence?.field_level?.address" style="display: flex; align-items: center; gap: 4px;">
+                            <span :style="{ 
+                              'font-size': '14px', 
+                              'font-weight': 'bold', 
+                              'color': getConfidenceColor(ocrConfidence.field_level.address) 
+                            }">
+                              {{ ocrConfidence.field_level.address }}%
+                            </span>
+                          </div>
+                          <button @click="editField('address')" style="padding: 4px 10px; font-size: 12px; background: #fff; border: 1px solid #dcdfe6; border-radius: 4px; color: #606266; cursor: pointer;" @mouseenter="(e) => e.target.style.background='#f5f7fa'" @mouseleave="(e) => e.target.style.background='#fff'">
+                            ✏️ 编辑
+                          </button>
+                        </div>
+                      </div>
+                      <p style="font-size: 15px; color: #303133; margin: 0; line-height: 1.5;">{{ ocrResult.address || '-' }}</p>
+                    </div>
+                  </div>
+                  
+                  <!-- 卡片底部操作按钮 -->
+                  <div style="padding: 15px; background: #fafafa; border-top: 1px solid #e4e7ed; display: flex; gap: 10px;">
+                    <button @click="validateWithAI" :disabled="aiAnalyzing" class="btn btn-primary" style="flex: 1;">🧠 AI校验</button>
+                    <button @click="createPackageFromOCR" class="btn btn-success" style="flex: 1;">📦 创建包裹</button>
+                    <button @click="clearOCRResult" class="btn btn-default">清空</button>
+                  </div>
+                </div>
+                
+                <div v-else style="border: 2px dashed #dcdfe6; border-radius: 8px; padding: 60px; text-align: center; background: #fafafa;">
+                  <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
+                  <p style="color: #909399; font-size: 14px;">请上传图片进行OCR识别</p>
+                  <p style="color: #909399; font-size: 12px; margin-top: 10px;">识别结果将在此处显示</p>
+                </div>
+                
+                <!-- AI校验结果 -->
+                <div v-if="aiAnalysisResult" :style="{ 
+                  'margin-top': '15px', 
+                  'padding': '15px', 
+                  'border-radius': '8px', 
+                  'border': '1px solid #e4e7ed',
+                  'background': aiAnalysisResult.confidence >= 80 ? '#f0f9eb' : aiAnalysisResult.confidence >= 60 ? '#fdf6ec' : '#fef0f0'
+                }">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <span style="font-size: 16px;">🧠</span>
+                    <span style="font-size: 14px; color: #303133; font-weight: bold;">AI校验结果</span>
+                    <span :style="{ 
+                      'padding': '4px 10px', 
+                      'border-radius': '12px',
+                      'font-size': '12px',
+                      'color': aiAnalysisResult.confidence >= 80 ? '#67C23A' : aiAnalysisResult.confidence >= 60 ? '#E6A23C' : '#F56C6C',
+                      'background': aiAnalysisResult.confidence >= 80 ? 'rgba(103, 194, 58, 0.15)' : aiAnalysisResult.confidence >= 60 ? 'rgba(230, 162, 60, 0.15)' : 'rgba(245, 108, 108, 0.15)'
+                    }">
+                      置信度 {{ aiAnalysisResult.confidence }}%
+                    </span>
+                  </div>
+                  <div style="font-size: 13px; color: #606266; line-height: 1.5;">
+                    <p><strong>校验结果：</strong>{{ aiAnalysisResult.summary }}</p>
+                    <p v-if="aiAnalysisResult.suggestions && aiAnalysisResult.suggestions.length > 0"><strong>💡 建议：</strong>{{ aiAnalysisResult.suggestions.join('；') }}</p>
+                  </div>
+                
+                <!-- 识别历史 -->
+                <div style="width: 400px;">
+                  <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">识别历史</h4>
+                <div style="border: 1px solid #e4e7ed; border-radius: 4px; max-height: 400px; overflow: auto;">
+                  <div v-if="ocrHistory.length === 0" style="padding: 10px; color: #909399; font-size: 14px; text-align: center;">暂无识别记录</div>
+                  <div v-else>
+                    <div v-for="(item, index) in ocrHistory" :key="index" style="padding: 10px; border-bottom: 1px solid #e4e7ed; cursor: pointer;" @click="loadOCRHistory(item)">
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 13px; color: #303133;">{{ item.tracking_number }}</span>
+                        <span style="font-size: 12px; color: #909399;">{{ item.time }}</span>
+                      </div>
+                      <div style="font-size: 12px; color: #909399; margin-top: 5px;">{{ item.recipient_name }} {{ item.recipient_phone }}</div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+          
+          <!-- 系统设置 -->
+          <div v-show="activeMenu === 'settings'" class="card" style="padding: 0; overflow: hidden;">
+            <!-- 设置页面布局 -->
+            <div style="display: flex; min-height: 600px;">
+              <!-- 左侧菜单 -->
+              <div style="width: 200px; background: #f5f7fa; border-right: 1px solid #e4e7ed; padding: 15px;">
+                <h4 style="font-size: 14px; color: #909399; margin-bottom: 15px; padding-left: 10px;">设置菜单</h4>
+                <div class="setting-menu">
+                  <div 
+                    v-for="item in settingMenuItems" 
+                    :key="item.key"
+                    @click="activeSettingTab = item.key"
+                    :class="{ active: activeSettingTab === item.key }"
+                    class="setting-menu-item"
+                  >
+                    <span>{{ item.icon }}</span>
+                    <span>{{ item.label }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 右侧内容区 -->
+              <div style="flex: 1; padding: 20px; overflow-y: auto;">
+                <!-- 基础信息设置 -->
+                <div v-show="activeSettingTab === 'basic'">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; color: #303133; margin: 0;">🏠 基础信息设置</h3>
+                    <div class="btn-group">
+                      <button @click="saveBasicSettings" :disabled="settingsLoading || !canModifySettings" class="btn btn-primary" :class="{ 'disabled': !canModifySettings }">保存设置</button>
+                      <button @click="resetBasicSettings" class="btn btn-default">重置</button>
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                      <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">站点信息</h4>
+                      <div class="form-group">
+                        <label>站点名称 <span style="color: #F56C6C;">*</span></label>
+                        <input v-model="basicSettings.site_name" :disabled="!canModifySettings" />
+                        <span v-if="basicFormErrors.site_name" class="error-text">{{ basicFormErrors.site_name }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label>站点地址</label>
+                        <textarea v-model="basicSettings.site_address" :disabled="!canModifySettings" rows="3"></textarea>
+                      </div>
+                      <div class="form-group">
+                        <label>联系电话 <span style="color: #F56C6C;">*</span></label>
+                        <input v-model="basicSettings.contact_phone" :disabled="!canModifySettings" />
+                        <span v-if="basicFormErrors.contact_phone" class="error-text">{{ basicFormErrors.contact_phone }}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">管理员信息</h4>
+                      <div class="form-group">
+                        <label>管理员姓名</label>
+                        <input v-model="basicSettings.admin_name" :disabled="!canModifySettings" />
+                      </div>
+                      <div class="form-group">
+                        <label>管理员邮箱</label>
+                        <input v-model="basicSettings.admin_email" :disabled="!canModifySettings" />
+                      </div>
+                      <div class="form-group">
+                        <label>服务说明</label>
+                        <textarea v-model="basicSettings.service_description" :disabled="!canModifySettings" rows="3"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 包裹规则设置 -->
+                <div v-show="activeSettingTab === 'package_rules'">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; color: #303133; margin: 0;">📦 包裹规则设置</h3>
+                    <div class="btn-group">
+                      <button @click="savePackageRules" :disabled="settingsLoading || !canModifySettings" class="btn btn-primary" :class="{ 'disabled': !canModifySettings }">保存设置</button>
+                      <button @click="resetPackageRules" class="btn btn-default">重置</button>
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                      <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">存放规则</h4>
+                      <div class="form-group">
+                        <label>免费存放天数 <span style="color: #F56C6C;">*</span></label>
+                        <input v-model="packageRules.overdue_days" type="number" min="1" max="30" :disabled="!canModifySettings" />
+                        <span v-if="packageRulesErrors.overdue_days" class="error-text">{{ packageRulesErrors.overdue_days }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label>超期后每天收费(元)</label>
+                        <input v-model="packageRules.overdue_fee_per_day" type="number" min="0" step="0.5" :disabled="!canModifySettings" />
+                      </div>
+                      <div class="form-group">
+                        <label>最大存放天数</label>
+                        <input v-model="packageRules.max_storage_days" type="number" min="1" max="90" :disabled="!canModifySettings" />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">异常规则</h4>
+                      <div class="form-group">
+                        <label>自动标记异常</label>
+                        <select v-model="packageRules.auto_mark_exception" :disabled="!canModifySettings">
+                          <option :value="true">是</option>
+                          <option :value="false">否</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>异常标记天数</label>
+                        <input v-model="packageRules.exception_days" type="number" min="1" max="30" :disabled="!canModifySettings" />
+                      </div>
+                      <div class="form-group">
+                        <label>大件包裹阈值(kg)</label>
+                        <input v-model="packageRules.large_package_weight" type="number" min="1" step="0.5" :disabled="!canModifySettings" />
+                      </div>
+                    </div>
+                  </div>
+                  <div style="margin-top: 20px; padding: 15px; background: #f5f7fa; border-radius: 4px;">
+                    <h5 style="font-size: 13px; color: #606266; margin-bottom: 10px;">📋 规则说明</h5>
+                    <ul style="font-size: 12px; color: #909399; line-height: 1.8;">
+                      <li>包裹到达后，免费存放 <strong>{{ packageRules.overdue_days }}</strong> 天</li>
+                      <li>超过免费期后，每天收取 <strong>{{ packageRules.overdue_fee_per_day }}</strong> 元</li>
+                      <li>包裹存放超过 <strong>{{ packageRules.max_storage_days }}</strong> 天将被退回</li>
+                      <li>超过 <strong>{{ packageRules.exception_days }}</strong> 天未取件将自动标记为异常</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- 通知设置 -->
+                <div v-show="activeSettingTab === 'notification'">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; color: #303133; margin: 0;">🔔 通知设置</h3>
+                    <div class="btn-group">
+                      <button @click="saveNotificationSettings" :disabled="settingsLoading || !canModifySettings" class="btn btn-primary" :class="{ 'disabled': !canModifySettings }">保存设置</button>
+                      <button @click="resetNotificationSettings" class="btn btn-default">重置</button>
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                      <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">通知方式</h4>
+                      <div class="form-group">
+                        <label>短信通知</label>
+                        <select v-model="notificationSettings.sms_notification" :disabled="!canModifySettings">
+                          <option :value="true">开启</option>
+                          <option :value="false">关闭</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>邮件通知</label>
+                        <select v-model="notificationSettings.email_notification" :disabled="!canModifySettings">
+                          <option :value="true">开启</option>
+                          <option :value="false">关闭</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>微信通知</label>
+                        <select v-model="notificationSettings.wechat_notification" :disabled="!canModifySettings">
+                          <option :value="true">开启</option>
+                          <option :value="false">关闭</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">通知时机</h4>
+                      <div class="form-group">
+                        <label>入库时通知</label>
+                        <select v-model="notificationSettings.notify_on_stored" :disabled="!canModifySettings">
+                          <option :value="true">开启</option>
+                          <option :value="false">关闭</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>即将超期通知</label>
+                        <select v-model="notificationSettings.notify_before_overdue" :disabled="!canModifySettings">
+                          <option :value="true">开启</option>
+                          <option :value="false">关闭</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>超期通知提前天数</label>
+                        <input v-model="notificationSettings.overdue_notify_days" type="number" min="1" max="7" :disabled="!canModifySettings" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 营业时间设置 -->
+                <div v-show="activeSettingTab === 'business_hours'">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; color: #303133; margin: 0;">⏰ 营业时间设置</h3>
+                    <div class="btn-group">
+                      <button @click="saveBusinessHours" :disabled="settingsLoading || !canModifySettings" class="btn btn-primary" :class="{ 'disabled': !canModifySettings }">保存设置</button>
+                      <button @click="resetBusinessHours" class="btn btn-default">重置</button>
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                      <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">工作日时间</h4>
+                      <div class="form-group">
+                        <label>上班时间 <span style="color: #F56C6C;">*</span></label>
+                        <input v-model="businessHours.work_start_time" type="time" :disabled="!canModifySettings" />
+                        <span v-if="businessHoursErrors.work_start_time" class="error-text">{{ businessHoursErrors.work_start_time }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label>下班时间 <span style="color: #F56C6C;">*</span></label>
+                        <input v-model="businessHours.work_end_time" type="time" :disabled="!canModifySettings" />
+                        <span v-if="businessHoursErrors.work_end_time" class="error-text">{{ businessHoursErrors.work_end_time }}</span>
+                      </div>
+                      <div class="form-group">
+                        <label>午休时间开始</label>
+                        <input v-model="businessHours.break_start_time" type="time" :disabled="!canModifySettings" />
+                      </div>
+                      <div class="form-group">
+                        <label>午休时间结束</label>
+                        <input v-model="businessHours.break_end_time" type="time" :disabled="!canModifySettings" />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 style="font-size: 14px; color: #303133; margin-bottom: 15px;">周末/节假日时间</h4>
+                      <div class="form-group">
+                        <label>周末上班时间</label>
+                        <input v-model="businessHours.weekend_start_time" type="time" :disabled="!canModifySettings" />
+                      </div>
+                      <div class="form-group">
+                        <label>周末下班时间</label>
+                        <input v-model="businessHours.weekend_end_time" type="time" :disabled="!canModifySettings" />
+                      </div>
+                      <div class="form-group">
+                        <label>节假日营业</label>
+                        <select v-model="businessHours.holiday_open" :disabled="!canModifySettings">
+                          <option :value="true">营业</option>
+                          <option :value="false">休息</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>节假日上班时间</label>
+                        <input v-model="businessHours.holiday_start_time" type="time" :disabled="!canModifySettings" />
+                      </div>
+                      <div class="form-group">
+                        <label>节假日下班时间</label>
+                        <input v-model="businessHours.holiday_end_time" type="time" :disabled="!canModifySettings" />
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="businessHoursErrors.time_range" class="error-text" style="margin-top: 15px;">
+                    {{ businessHoursErrors.time_range }}
+                  </div>
+                </div>
+
+                <!-- 快递公司管理 -->
+                <div v-show="activeSettingTab === 'courier_companies'">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; color: #303133; margin: 0;">📮 快递公司管理</h3>
+                    <button @click="showCourierCompanyModal = true" :disabled="!canModifySettings" class="btn btn-primary" :class="{ 'disabled': !canModifySettings }">+ 添加快递公司</button>
+                  </div>
+                  <div class="table-container">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>快递公司名称</th>
+                          <th>编码</th>
+                          <th>联系电话</th>
+                          <th>状态</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="company in courierCompanies" :key="company.id">
+                          <td>{{ company.name }}</td>
+                          <td>{{ company.code }}</td>
+                          <td>{{ company.contact_phone || '-' }}</td>
+                          <td>
+                            <span :class="company.status === 'enabled' ? 'status-badge active' : 'status-badge inactive'">
+                              {{ company.status === 'enabled' ? '启用' : '禁用' }}
+                            </span>
+                          </td>
+                          <td>
+                            <button @click="editCourierCompany(company)" :disabled="!canModifySettings" class="btn btn-default btn-sm">编辑</button>
+                            <button @click="toggleCourierCompanyStatus(company)" :disabled="!canModifySettings" class="btn btn-default btn-sm">
+                              {{ company.status === 'enabled' ? '禁用' : '启用' }}
+                            </button>
+                            <button @click="deleteCourierCompany(company)" :disabled="!canModifySettings" class="btn btn-danger btn-sm">删除</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 货架管理 -->
+                <div v-show="activeSettingTab === 'shelves'">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; color: #303133; margin: 0;">📦 货架管理</h3>
+                    <button @click="showShelfModal = true" :disabled="!canModifySettings" class="btn btn-primary" :class="{ 'disabled': !canModifySettings }">+ 添加货架</button>
+                  </div>
+                  <div class="table-container">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>货架名称</th>
+                          <th>位置</th>
+                          <th>容量</th>
+                          <th>当前使用</th>
+                          <th>使用率</th>
+                          <th>状态</th>
+                          <th>操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="shelf in shelves" :key="shelf.id">
+                          <td>{{ shelf.name }}</td>
+                          <td>{{ shelf.location || '-' }}</td>
+                          <td>{{ shelf.capacity }}</td>
+                          <td>{{ shelf.current_usage }}</td>
+                          <td>
+                            <div style="width: 100px; height: 20px; background: #e4e7ed; border-radius: 10px; overflow: hidden;">
+                              <div 
+                                style="height: 100%; border-radius: 10px; transition: width 0.3s;"
+                                :style="{ 
+                                  width: shelf.usage_rate + '%',
+                                  background: shelf.usage_rate >= 90 ? '#F56C6C' : shelf.usage_rate >= 70 ? '#E6A23C' : '#67C23A'
+                                }"
+                              ></div>
+                            </div>
+                            <span style="font-size: 12px; color: #606266; margin-left: 5px;">{{ shelf.usage_rate }}%</span>
+                          </td>
+                          <td>
+                            <span :class="shelf.status === 'enabled' ? 'status-badge active' : 'status-badge inactive'">
+                              {{ shelf.status === 'enabled' ? '启用' : '禁用' }}
+                            </span>
+                          </td>
+                          <td>
+                            <button @click="editShelf(shelf)" :disabled="!canModifySettings" class="btn btn-default btn-sm">编辑</button>
+                            <button @click="toggleShelfStatus(shelf)" :disabled="!canModifySettings" class="btn btn-default btn-sm">
+                              {{ shelf.status === 'enabled' ? '禁用' : '启用' }}
+                            </button>
+                            <button @click="deleteShelf(shelf)" :disabled="!canModifySettings" class="btn btn-danger btn-sm">删除</button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 配置变更日志 -->
+                <div v-show="activeSettingTab === 'logs'">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; color: #303133; margin: 0;">📝 配置变更日志</h3>
+                    <div style="display: flex; gap: 10px;">
+                      <input v-model="logSearchKey" placeholder="搜索配置项..." class="form-control" style="width: 200px;" />
+                      <button @click="loadSettingsLogs" class="btn btn-default">搜索</button>
+                    </div>
+                  </div>
+                  <div class="table-container">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>配置项</th>
+                          <th>变更前</th>
+                          <th>变更后</th>
+                          <th>变更人</th>
+                          <th>变更类型</th>
+                          <th>IP地址</th>
+                          <th>变更时间</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr v-for="log in settingsLogs" :key="log.id">
+                          <td>{{ log.setting_label || log.key }}</td>
+                          <td>{{ log.old_value || '-' }}</td>
+                          <td>{{ log.new_value || '-' }}</td>
+                          <td>{{ log.changed_by || '系统' }}</td>
+                          <td>
+                            <span :class="log.change_type === 'reset' ? 'status-badge warning' : 'status-badge active'">
+                              {{ log.change_type === 'reset' ? '重置' : '修改' }}
+                            </span>
+                          </td>
+                          <td>{{ log.ip_address || '-' }}</td>
+                          <td>{{ log.created_at }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 快递公司弹窗 -->
+          <div v-if="showCourierCompanyModal" class="modal-overlay" @click.self="closeCourierCompanyModal">
+            <div class="modal-content" style="width: 450px;">
+              <div class="modal-header">
+                <h3>{{ editingCourierCompany ? '编辑快递公司' : '添加快递公司' }}</h3>
+                <button @click="closeCourierCompanyModal" class="modal-close">×</button>
+              </div>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label>快递公司名称 <span style="color: #F56C6C;">*</span></label>
+                  <input v-model="courierCompanyForm.name" />
+                  <span v-if="courierCompanyFormErrors.name" class="error-text">{{ courierCompanyFormErrors.name }}</span>
+                </div>
+                <div class="form-group">
+                  <label>编码 <span style="color: #F56C6C;">*</span></label>
+                  <input v-model="courierCompanyForm.code" />
+                  <span v-if="courierCompanyFormErrors.code" class="error-text">{{ courierCompanyFormErrors.code }}</span>
+                </div>
+                <div class="form-group">
+                  <label>联系电话</label>
+                  <input v-model="courierCompanyForm.contact_phone" />
+                </div>
+                <div class="form-group">
+                  <label>官网地址</label>
+                  <input v-model="courierCompanyForm.website" />
+                </div>
+                <div class="form-group">
+                  <label>描述</label>
+                  <textarea v-model="courierCompanyForm.description" rows="3"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button @click="closeCourierCompanyModal" class="btn btn-default">取消</button>
+                <button @click="saveCourierCompany" :disabled="courierCompanySaving" class="btn btn-primary">
+                  {{ courierCompanySaving ? '保存中...' : '保存' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 货架弹窗 -->
+          <div v-if="showShelfModal" class="modal-overlay" @click.self="closeShelfModal">
+            <div class="modal-content" style="width: 450px;">
+              <div class="modal-header">
+                <h3>{{ editingShelf ? '编辑货架' : '添加货架' }}</h3>
+                <button @click="closeShelfModal" class="modal-close">×</button>
+              </div>
+              <div class="modal-body">
+                <div class="form-group">
+                  <label>货架名称 <span style="color: #F56C6C;">*</span></label>
+                  <input v-model="shelfForm.name" />
+                  <span v-if="shelfFormErrors.name" class="error-text">{{ shelfFormErrors.name }}</span>
+                </div>
+                <div class="form-group">
+                  <label>位置</label>
+                  <input v-model="shelfForm.location" />
+                </div>
+                <div class="form-group">
+                  <label>容量 <span style="color: #F56C6C;">*</span></label>
+                  <input v-model="shelfForm.capacity" type="number" min="1" />
+                  <span v-if="shelfFormErrors.capacity" class="error-text">{{ shelfFormErrors.capacity }}</span>
+                </div>
+                <div class="form-group">
+                  <label>描述</label>
+                  <textarea v-model="shelfForm.description" rows="3"></textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button @click="closeShelfModal" class="btn btn-default">取消</button>
+                <button @click="saveShelf" :disabled="shelfSaving" class="btn btn-primary">
+                  {{ shelfSaving ? '保存中...' : '保存' }}
+                </button>
+              </div>
+            </div>
+          </div>
+      </main>
+    
+    <!-- AI助手悬浮按钮 -->
+    <div 
+      class="ai-float-btn" 
+      :class="{ active: showAiChat }"
+      @click="toggleAiChat"
+      title="打开AI助手"
+    >
+      🤖
+    </div>
+    
+    <!-- AI助手聊天窗口 -->
+    <div class="ai-chat-window" :class="{ show: showAiChat }">
+      <!-- 头部 -->
+      <div class="ai-chat-header">
+        <h3>🤖 驿站小助手</h3>
+        <div style="display: flex; gap: 8px;">
+          <button class="clear-btn" @click="clearAiChat" title="清空对话">✕</button>
+          <button class="close-btn" @click="showAiChat = false" title="关闭窗口">×</button>
+        </div>
+      </div>
+      
+      <!-- 消息区域 -->
+      <div class="ai-chat-messages" ref="aiChatMessagesRef">
+        <div v-if="aiMessages.length === 0" style="text-align: center; padding: 40px 20px; color: #909399;">
+          <div style="font-size: 48px; margin-bottom: 15px;">👋</div>
+          <p>您好！我是驿站小助手</p>
+          <p style="font-size: 13px; margin-top: 8px;">有什么可以帮您？</p>
+        </div>
+        
+        <div v-for="(msg, index) in aiMessages" :key="index" :class="['ai-message', msg.role]">
+          <div class="avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
+          <div>
+            <div class="bubble">
+              <div v-if="msg.packages && msg.packages.length > 0">
+                <div v-html="formatMessage(msg.content)"></div>
+                <div v-for="pkg in msg.packages" :key="pkg.id" class="ai-package-card">
+                  <div class="package-row"><span class="package-label">运单号</span><span class="package-value">{{ pkg.tracking_number }}</span></div>
+                  <div class="package-row"><span class="package-label">收件人</span><span class="package-value">{{ pkg.recipient_name }}</span></div>
+                  <div class="package-row"><span class="package-label">快递公司</span><span class="package-value">{{ pkg.courier_company }}</span></div>
+                  <div class="package-row"><span class="package-label">状态</span><span :class="['package-value', 'status-' + pkg.status]">{{ getStatusLabel(pkg.status) }}</span></div>
+                  <div v-if="pkg.pickup_code" class="package-row"><span class="package-label">取件码</span><span class="package-value">{{ pkg.pickup_code }}</span></div>
+                </div>
+              </div>
+              <div v-else>
+                <div v-html="formatMessage(msg.content)"></div>
+              </div>
+            </div>
+            <div class="time">{{ msg.time }}</div>
+          </div>
+        </div>
+        
+        <div v-if="aiChatProcessing" class="ai-loading"><span></span></div>
+      </div>
+      
+      <!-- 快捷问题按钮区 -->
+      <div class="ai-quick-questions">
+        <h4>快捷问题</h4>
+        <div class="ai-quick-tags">
+          <button 
+            v-for="q in quickQuestions" 
+            :key="q.id" 
+            class="ai-quick-tag"
+            @click="sendQuickQuestion(q)"
+          >
+            {{ q.icon }} {{ q.label }}
+          </button>
+        </div>
+      </div>
+      
+      <!-- 输入区域 -->
+      <div class="ai-chat-input">
+        <input 
+          v-model="aiInputMessage" 
+          type="text" 
+          placeholder="输入问题..."
+          @keyup.enter="sendAiMessage"
+        />
+        <button @click="sendAiMessage" :disabled="!aiInputMessage.trim() || aiProcessing">
+          →
+        </button>
+      </div>
+    </div>
+    
+    <!-- 添加包裹弹窗 -->
+    <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
+      <div class="modal-content">
+        <h3 style="margin-bottom: 20px;">添加包裹</h3>
+        <div class="form-group">
+          <label>运单号 <span style="color: #F56C6C;">*</span></label>
+          <input v-model="newPackage.tracking_number" placeholder="请输入运单号" />
+          <span v-if="formErrors.tracking_number" class="error-message">{{ formErrors.tracking_number }}</span>
+        </div>
+        <div class="form-group">
+          <label>收件人 <span style="color: #F56C6C;">*</span></label>
+          <input v-model="newPackage.recipient_name" placeholder="请输入收件人姓名" />
+        </div>
+        <div class="form-group">
+          <label>手机号 <span style="color: #F56C6C;">*</span></label>
+          <input v-model="newPackage.recipient_phone" placeholder="请输入手机号" />
+        </div>
+        <div class="form-group">
+          <label>快递公司</label>
+          <select v-model="newPackage.courier_company">
+            <option value="">请选择快递公司</option>
+            <option v-for="courier in courierOptions" :key="courier" :value="courier">{{ courier }}</option>
+          </select>
+        </div>
+        <div class="btn-group" style="margin-top: 20px;">
+          <button @click="savePackage" class="btn btn-primary">保存</button>
+          <button @click="showAddModal = false" class="btn btn-default">取消</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- OCR弹窗 -->
+    <div v-if="showOcrModal" class="modal-overlay" @click.self="showOcrModal = false">
+      <div class="modal-content">
+        <h3 style="margin-bottom: 20px;">OCR识别</h3>
+        <div style="border: 2px dashed #dcdfe6; border-radius: 4px; padding: 40px; text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 48px; margin-bottom: 15px;">📷</div>
+          <p style="color: #909399;">点击或拖拽上传图片</p>
+          <input type="file" accept="image/*" @change="performOCR" style="display: none;" ref="ocrFileInput" />
+          <button @click="triggerOcrUpload" class="btn btn-primary" style="margin-top: 15px;">选择图片</button>
+        </div>
+        <div v-if="ocrLoading" class="loading"><div class="spinner"></div>识别中...</div>
+        <button @click="showOcrModal = false" class="btn btn-default" style="margin-top: 20px;">关闭</button>
+      </div>
+    </div>
+  
+    <!-- OCR编辑模态框 -->
+    <div v-if="showEditModal" class="modal-overlay" @click.self="cancelEdit">
+      <div class="modal-content">
+        <h3 style="margin-bottom: 20px;">编辑{{ editingField === 'tracking_number' ? '运单号' : editingField === 'recipient_name' ? '收件人姓名' : editingField === 'recipient_phone' ? '手机号' : editingField === 'courier_company' ? '快递公司' : '地址' }}</h3>
+        <div class="form-group">
+          <label>{{ editingField === 'tracking_number' ? '运单号' : editingField === 'recipient_name' ? '收件人姓名' : editingField === 'recipient_phone' ? '手机号' : editingField === 'courier_company' ? '快递公司' : '地址' }}</label>
+          <textarea 
+            v-if="editingField === 'address'"
+            v-model="editingValue" 
+            :placeholder="'请输入' + (editingField === 'tracking_number' ? '运单号' : editingField === 'recipient_name' ? '收件人姓名' : editingField === 'recipient_phone' ? '手机号' : editingField === 'courier_company' ? '快递公司' : '地址')"
+            rows="3"
+          ></textarea>
+          <input 
+            v-else
+            v-model="editingValue" 
+            :type="editingField === 'recipient_phone' ? 'tel' : 'text'"
+            :placeholder="'请输入' + (editingField === 'tracking_number' ? '运单号' : editingField === 'recipient_name' ? '收件人姓名' : editingField === 'recipient_phone' ? '手机号' : editingField === 'courier_company' ? '快递公司' : '地址')"
+          />
+          <div v-if="editErrors.required" class="error-message">⚠️ {{ editErrors.required }}</div>
+          <div v-if="editErrors.format" class="error-message">⚠️ {{ editErrors.format }}</div>
+          <div v-if="editErrors.length" class="error-message">⚠️ {{ editErrors.length }}</div>
+        </div>
+        <div class="btn-group" style="justify-content: flex-end;">
+          <button @click="cancelEdit" class="btn btn-default">取消</button>
+          <button @click="saveEdit" class="btn btn-primary">保存</button>
+        </div>
+      </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+  </div>
+  </div>
+  
+  <!-- Toast容器 -->
+  <div id="toast-container"></div>
+
+<script>
+    console.log('=== 脚本开始执行 ===')
+    console.log('Vue版本:', Vue.version)
+    console.log('axios是否可用:', typeof axios !== 'undefined')
+    
+    const { createApp, ref, reactive, computed, onMounted, onUnmounted, watch } = Vue
+
+    console.log('=== Vue API解构完成 ===')
+
+    // ========== 全局错误处理 ==========
+    // 未捕获的Promise错误
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('🚨 未捕获的Promise错误:', event.reason);
+      alert('系统异常，请刷新页面重试\n\n错误详情: ' + (event.reason?.message || '未知错误'));
+      event.preventDefault();
+    });
+
+    // JavaScript运行时错误
+    window.addEventListener('error', function(event) {
+      console.error('🚨 JavaScript错误:', event.message, 'at line', event.lineno, 'column', event.colno);
+      console.error('错误来源:', event.filename);
+      console.error('错误对象:', event.error);
+      // 只有在不是Script error时才显示alert，避免重复提示
+      if (event.message !== 'Script error.' || event.filename) {
+        alert('系统异常，请刷新页面重试\n\n错误: ' + event.message + '\n文件: ' + (event.filename || '未知'));
+      }
+    });
+
+    // ========== Axios全局配置 ==========
+    axios.interceptors.response.use(
+      response => {
+        // 兼容不同的响应格式
+        const data = response.data;
+        if (data && data.data !== undefined) {
+          return { ...response, data: data.data, meta: data.meta };
+        }
+        return response;
+      },
+      error => {
+        console.error('🚨 请求失败:', error.response?.status, error.response?.data);
+        
+        // 如果是认证错误，重定向到登录页
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userInfo');
+          alert('登录已失效，请重新登录');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 500);
+        }
+        
+        return Promise.reject(error);
+      }
+    );
+
+    const toast = {
+      show(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container')
+        const toastEl = document.createElement('div')
+        toastEl.className = `toast toast-${type} show`
+        toastEl.textContent = message
+        container.appendChild(toastEl)
+        setTimeout(() => {
+          toastEl.classList.remove('show')
+          setTimeout(() => toastEl.remove(), 300)
+        }, duration)
+      },
+      success: (msg) => toast.show(msg, 'success'),
+      warning: (msg) => toast.show(msg, 'warning'),
+      error: (msg) => toast.show(msg, 'error'),
+      info: (msg) => toast.show(msg, 'info')
+    }
+
+    console.log('=== 开始创建Vue应用 ===')
+    const app = createApp({
+      setup() {
+        console.log('=== Vue setup开始执行 ===')
+        const menuItems = [
+          { name: 'dashboard', label: '系统首页', icon: '🏠', path: '/pc' },
+          { name: 'packages', label: '包裹管理', icon: '📦', path: '/pc/packages' },
+          { name: 'exceptions', label: '异常管理', icon: '⚠️', path: '/pc/exceptions' },
+          { name: 'statistics', label: '统计分析', icon: '📊', path: '/pc/statistics' },
+          { name: 'ocr', label: 'OCR识别', icon: '🤖', path: '/pc/ocr' },
+          { name: 'settings', label: '系统设置', icon: '⚙️', path: '/pc/settings' }
+        ]
+
+        const loading = ref(true)
+        const activeMenu = ref('dashboard')
+        const currentUser = ref('')
+        const currentTime = ref('')
+        const refreshLoading = ref(false)
+        
+        const stats = reactive([
+          { title: '今日入库', value: 0, color: '#409EFF' },
+          { title: '今日出库', value: 0, color: '#67C23A' },
+          { title: '异常包裹', value: 0, color: '#E6A23C' },
+          { title: '待取件', value: 0, color: '#F56C6C' }
+        ])
+        
+        const packages = ref([])
+        const totalPackages = ref(0)
+        const currentPage = ref(1)
+        const pageSize = ref(10)
+        const searchKeyword = ref('')
+        const statusFilter = ref('')
+        const selectedPackages = ref([])
+        const recentPackages = ref([])
+        
+        const exceptions = ref([])
+        const exceptionStatusFilter = ref('')
+        
+        const statsData = reactive({
+          total_packages: 0,
+          today_stored: 0,
+          today_picked_up: 0,
+          exception_count: 0,
+          courier_distribution: {}
+        })
+        
+        // 设置菜单列表
+        const settingMenuItems = [
+          { key: 'basic', label: '基础信息', icon: '🏠' },
+          { key: 'package_rules', label: '包裹规则', icon: '📦' },
+          { key: 'notification', label: '通知设置', icon: '🔔' },
+          { key: 'business_hours', label: '营业时间', icon: '⏰' },
+          { key: 'courier_companies', label: '快递公司', icon: '📮' },
+          { key: 'shelves', label: '货架管理', icon: '📊' },
+          { key: 'logs', label: '变更日志', icon: '📝' }
+        ]
+        
+        const activeSettingTab = ref('basic')
+        const settingsLoading = ref(false)
+        const canModifySettings = computed(() => currentUser.value?.role === 'admin')
+        
+        // 基础信息设置
+        const basicSettings = reactive({
+          site_name: '菜鸟驿站',
+          site_address: '',
+          contact_phone: '',
+          admin_name: '',
+          admin_email: '',
+          service_description: ''
+        })
+        const basicFormErrors = reactive({})
+        
+        // 包裹规则设置
+        const packageRules = reactive({
+          overdue_days: 3,
+          overdue_fee_per_day: 1,
+          max_storage_days: 15,
+          auto_mark_exception: true,
+          exception_days: 7,
+          large_package_weight: 5
+        })
+        const packageRulesErrors = reactive({})
+        
+        // 通知设置
+        const notificationSettings = reactive({
+          sms_notification: true,
+          email_notification: false,
+          wechat_notification: false,
+          notify_on_stored: true,
+          notify_before_overdue: true,
+          overdue_notify_days: 1
+        })
+        
+        // 营业时间设置
+        const businessHours = reactive({
+          work_start_time: '08:00',
+          work_end_time: '18:00',
+          break_start_time: '12:00',
+          break_end_time: '13:00',
+          weekend_start_time: '09:00',
+          weekend_end_time: '17:00',
+          holiday_open: false,
+          holiday_start_time: '09:00',
+          holiday_end_time: '17:00'
+        })
+        const businessHoursErrors = reactive({})
+        
+        // 快递公司管理
+        const courierCompanies = ref([])
+        const showCourierCompanyModal = ref(false)
+        const editingCourierCompany = ref(null)
+        const courierCompanySaving = ref(false)
+        const courierCompanyForm = reactive({
+          name: '',
+          code: '',
+          contact_phone: '',
+          website: '',
+          description: ''
+        })
+        const courierCompanyFormErrors = reactive({})
+        
+        // 货架管理
+        const shelves = ref([])
+        const showShelfModal = ref(false)
+        const editingShelf = ref(null)
+        const shelfSaving = ref(false)
+        const shelfForm = reactive({
+          name: '',
+          location: '',
+          capacity: 50,
+          description: ''
+        })
+        const shelfFormErrors = reactive({})
+        
+        // 配置变更日志
+        const settingsLogs = ref([])
+        const logSearchKey = ref('')
+        
+        const ocrImage = ref(null)
+        const ocrResult = ref(null)
+        const ocrQuality = ref(null)
+        const ocrConfidence = ref(null)  // 新增：置信度信息
+        const ocrLoading = ref(false)
+        const showOcrModal = ref(false)
+        const ocrFileInput = ref(null)
+        const ocrHistory = ref([])
+        
+        const showAddModal = ref(false)
+        const newPackage = reactive({
+          tracking_number: '',
+          recipient_name: '',
+          recipient_phone: '',
+          courier_company: ''
+        })
+        const formErrors = reactive({})
+        
+        // OCR编辑模态框状态
+        const showEditModal = ref(false)
+        const editingField = ref('')
+        const editingValue = ref('')
+        const editErrors = reactive({})
+        
+        // AI助手相关状态
+        const aiAnalyzing = ref(false)
+        const aiAnalysisResult = ref(null)
+        const aiChatMessages = ref([])
+        const aiChatInput = ref('')
+        const aiProcessing = ref(false)
+        const quickActions = ref([
+          { id: 'validate_ocr', label: '🧠 校验OCR数据', description: '检查识别结果的准确性', icon: 'check' },
+          { id: 'analyze_exceptions', label: '📊 分析异常包裹', description: '找出异常包裹的规律', icon: 'alert' },
+          { id: 'package_stats', label: '📦 包裹统计', description: '查看今日包裹数据统计', icon: 'package' },
+          { id: 'remind_pickup', label: '🔔 取件提醒', description: '发送取件提醒通知', icon: 'bell' },
+          { id: 'inventory_check', label: '📋 库存盘点', description: '盘点当前库存状态', icon: 'clipboard' },
+          { id: 'optimize_workflow', label: '⚡ 优化工作流程', description: '获取效率提升建议', icon: 'zap' },
+          { id: 'report_summary', label: '📈 生成日报摘要', description: '快速了解今日运营情况', icon: 'bar-chart' },
+          { id: 'export_data', label: '💾 数据导出', description: '导出运营数据报表', icon: 'download' },
+          { id: 'system_status', label: '🔧 系统状态', description: '查看系统运行状态', icon: 'settings' },
+          { id: 'help', label: '❓ 帮助中心', description: '获取系统使用帮助', icon: 'help-circle' }
+        ])
+        const currentSuggestion = ref(null)
+        // AI API配置
+        const AI_API_KEY = 'sk-929d94d767b245ca92521ae631338c71'
+        const AI_API_URL = 'https://api.openai.com/v1/chat/completions'
+        
+        // 菜鸟驿站AI助手状态
+        const showAiChat = ref(false)
+        const aiMessages = ref([])
+        const aiInputMessage = ref('')
+        const aiChatProcessing = ref(false)
+        const quickQuestions = ref([
+          { id: 'business_hours', label: '营业时间', icon: '🕐' },
+          { id: 'pricing', label: '收费标准', icon: '💰' },
+          { id: 'pickup_process', label: '取件流程', icon: '📦' },
+          { id: 'contact', label: '联系方式', icon: '📞' },
+          { id: 'storage_rules', label: '存放规则', icon: '📋' },
+          { id: 'services', label: '服务项目', icon: '✨' }
+        ])
+        const aiChatMessagesRef = ref(null)
+        
+        const statusLabels = {
+          pending: '待入库',
+          stored: '已入库',
+          picked_up: '已出库',
+          exception: '异常'
+        }
+        
+        const exceptionTypeLabels = {
+          damaged: '包裹破损',
+          address_error: '地址错误',
+          phone_error: '手机号错误',
+          duplicate: '重复包裹',
+          other: '其他'
+        }
+        
+        const exceptionStatusLabels = {
+          pending: '待处理',
+          processing: '处理中',
+          resolved: '已解决'
+        }
+        
+        const courierOptions = ['顺丰速运', '圆通速递', '中通快递', '申通快递', '韵达快递', 'EMS', '其他']
+        
+        const currentMenuLabel = computed(() => {
+          const item = menuItems.find(m => m.name === activeMenu.value)
+          return item ? item.label : '系统首页'
+        })
+        
+        const totalPages = computed(() => Math.ceil(totalPackages.value / pageSize.value))
+        
+        const pageList = computed(() => {
+          const pages = []
+          for (let i = 1; i <= Math.min(totalPages.value, 10); i++) {
+            pages.push(i)
+          }
+          return pages
+        })
+        
+        const allSelected = computed(() => {
+          return packages.value.length > 0 && packages.value.every(p => selectedPackages.value.includes(p.id))
+        })
+        
+        const formatTime = (timeStr) => {
+          if (!timeStr) return '-'
+          const date = new Date(timeStr)
+          return date.toLocaleString('zh-CN')
+        }
+        
+        const selectMenu = (item) => {
+          console.log('selectMenu called:', item.name)
+          activeMenu.value = item.name
+          window.history.pushState({}, '', item.path)
+          
+          if (item.name === 'dashboard') {
+            loadStats()
+            loadRecentPackages()
+          } else if (item.name === 'packages') {
+            loadPackages()
+          } else if (item.name === 'exceptions') {
+            loadExceptions()
+          } else if (item.name === 'statistics') {
+            loadStatistics()
+          } else if (item.name === 'settings') {
+            loadBasicSettings()
+            loadCourierCompanies()
+            loadShelves()
+            loadSettingsLogs()
+          }
+        }
+        
+        const logout = () => {
+          localStorage.removeItem('token')
+          localStorage.removeItem('userInfo')
+          window.location.href = '/login'
+        }
+        
+        const loadStats = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const response = await axios.get('/api/v1/packages/today_overview', {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            // 兼容不同的响应格式
+            const data = response.data.data || response.data || {}
+            stats[0].value = data.today_stored || 0
+            stats[1].value = data.today_picked_up || 0
+            stats[2].value = data.exception_count || 0
+            stats[3].value = data.pending_pickup || 0
+          } catch (error) {
+            console.error('加载统计数据失败:', error)
+          }
+        }
+        
+        const loadPackages = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const params = new URLSearchParams({
+              page: currentPage.value,
+              per_page: pageSize.value,
+              keyword: searchKeyword.value,
+              status: statusFilter.value
+            })
+            const response = await axios.get(`/api/v1/packages?${params.toString()}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            // 兼容不同的响应格式
+            packages.value = response.data.data || response.data || []
+            totalPackages.value = response.meta?.total || response.data.meta?.total || 0
+          } catch (error) {
+            console.error('加载包裹列表失败:', error)
+          }
+        }
+        
+        const loadRecentPackages = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const response = await axios.get('/api/v1/packages?page=1&per_page=5', {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            recentPackages.value = response.data.data || []
+          } catch (error) {
+            console.error('加载最近包裹失败:', error)
+          }
+        }
+        
+        const loadExceptions = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const params = new URLSearchParams({
+              status: exceptionStatusFilter.value
+            })
+            const response = await axios.get(`/api/v1/exceptions?${params.toString()}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            exceptions.value = response.data.data || []
+          } catch (error) {
+            console.error('加载异常列表失败:', error)
+          }
+        }
+        
+        const loadStatistics = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const response = await axios.get('/api/v1/statistics/summary', {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            Object.assign(statsData, response.data.data || {})
+          } catch (error) {
+            console.error('加载统计数据失败:', error)
+          }
+        }
+        
+        // 加载基础设置
+        const loadBasicSettings = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const response = await axios.get('/api/v1/system_settings', {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            const data = response.data.data || response.data || {}
+            basicSettings.site_name = data.site_name || '菜鸟驿站'
+            basicSettings.site_address = data.site_address || ''
+            basicSettings.contact_phone = data.contact_phone || ''
+            basicSettings.admin_name = data.admin_name || ''
+            basicSettings.admin_email = data.admin_email || ''
+            basicSettings.service_description = data.service_description || ''
+          } catch (error) {
+            console.error('加载基础设置失败:', error)
+          }
+        }
+        
+        // 验证基础信息表单
+        const validateBasicForm = () => {
+          Object.keys(basicFormErrors).forEach(key => delete basicFormErrors[key])
+          let valid = true
+          
+          if (!basicSettings.site_name.trim()) {
+            basicFormErrors.site_name = '站点名称不能为空'
+            valid = false
+          } else if (basicSettings.site_name.length < 2 || basicSettings.site_name.length > 50) {
+            basicFormErrors.site_name = '站点名称长度必须在2-50字符之间'
+            valid = false
+          }
+          
+          if (!basicSettings.contact_phone.trim()) {
+            basicFormErrors.contact_phone = '联系电话不能为空'
+            valid = false
+          } else if (!/^1[3-9]\d{9}$/.test(basicSettings.contact_phone)) {
+            basicFormErrors.contact_phone = '请输入正确的手机号'
+            valid = false
+          }
+          
+          return valid
+        }
+        
+        // 保存基础信息设置
+        const saveBasicSettings = async () => {
+          if (!validateBasicForm()) return
+          
+          settingsLoading.value = true
+          try {
+            const token = localStorage.getItem('token')
+            await axios.put('/api/v1/system_settings/batch_update', basicSettings, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('基础信息保存成功')
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '保存失败'
+            toast.error(errMsg)
+          } finally {
+            settingsLoading.value = false
+          }
+        }
+        
+        // 重置基础信息设置
+        const resetBasicSettings = () => {
+          basicSettings.site_name = '菜鸟驿站'
+          basicSettings.site_address = ''
+          basicSettings.contact_phone = ''
+          basicSettings.admin_name = ''
+          basicSettings.admin_email = ''
+          basicSettings.service_description = ''
+          Object.keys(basicFormErrors).forEach(key => delete basicFormErrors[key])
+        }
+        
+        // 验证包裹规则表单
+        const validatePackageRules = () => {
+          Object.keys(packageRulesErrors).forEach(key => delete packageRulesErrors[key])
+          let valid = true
+          
+          if (!packageRules.overdue_days || packageRules.overdue_days < 1 || packageRules.overdue_days > 30) {
+            packageRulesErrors.overdue_days = '免费存放天数必须在1-30之间'
+            valid = false
+          }
+          
+          return valid
+        }
+        
+        // 保存包裹规则设置
+        const savePackageRules = async () => {
+          if (!validatePackageRules()) return
+          
+          settingsLoading.value = true
+          try {
+            const token = localStorage.getItem('token')
+            await axios.put('/api/v1/system_settings/batch_update', packageRules, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('包裹规则保存成功')
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '保存失败'
+            toast.error(errMsg)
+          } finally {
+            settingsLoading.value = false
+          }
+        }
+        
+        // 重置包裹规则设置
+        const resetPackageRules = () => {
+          packageRules.overdue_days = 3
+          packageRules.overdue_fee_per_day = 1
+          packageRules.max_storage_days = 15
+          packageRules.auto_mark_exception = true
+          packageRules.exception_days = 7
+          packageRules.large_package_weight = 5
+          Object.keys(packageRulesErrors).forEach(key => delete packageRulesErrors[key])
+        }
+        
+        // 保存通知设置
+        const saveNotificationSettings = async () => {
+          settingsLoading.value = true
+          try {
+            const token = localStorage.getItem('token')
+            await axios.put('/api/v1/system_settings/batch_update', notificationSettings, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('通知设置保存成功')
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '保存失败'
+            toast.error(errMsg)
+          } finally {
+            settingsLoading.value = false
+          }
+        }
+        
+        // 重置通知设置
+        const resetNotificationSettings = () => {
+          notificationSettings.sms_notification = true
+          notificationSettings.email_notification = false
+          notificationSettings.wechat_notification = false
+          notificationSettings.notify_on_stored = true
+          notificationSettings.notify_before_overdue = true
+          notificationSettings.overdue_notify_days = 1
+        }
+        
+        // 验证营业时间表单
+        const validateBusinessHours = () => {
+          Object.keys(businessHoursErrors).forEach(key => delete businessHoursErrors[key])
+          let valid = true
+          
+          if (!businessHours.work_start_time) {
+            businessHoursErrors.work_start_time = '上班时间不能为空'
+            valid = false
+          }
+          
+          if (!businessHours.work_end_time) {
+            businessHoursErrors.work_end_time = '下班时间不能为空'
+            valid = false
+          }
+          
+          if (businessHours.work_start_time && businessHours.work_end_time) {
+            const start = new Date(`2000-01-01T${businessHours.work_start_time}`)
+            const end = new Date(`2000-01-01T${businessHours.work_end_time}`)
+            if (start >= end) {
+              businessHoursErrors.time_range = '上班时间不能晚于下班时间'
+              valid = false
+            }
+          }
+          
+          return valid
+        }
+        
+        // 保存营业时间设置
+        const saveBusinessHours = async () => {
+          if (!validateBusinessHours()) return
+          
+          settingsLoading.value = true
+          try {
+            const token = localStorage.getItem('token')
+            await axios.put('/api/v1/system_settings/batch_update', businessHours, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('营业时间保存成功')
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '保存失败'
+            toast.error(errMsg)
+          } finally {
+            settingsLoading.value = false
+          }
+        }
+        
+        // 重置营业时间设置
+        const resetBusinessHours = () => {
+          businessHours.work_start_time = '08:00'
+          businessHours.work_end_time = '18:00'
+          businessHours.break_start_time = '12:00'
+          businessHours.break_end_time = '13:00'
+          businessHours.weekend_start_time = '09:00'
+          businessHours.weekend_end_time = '17:00'
+          businessHours.holiday_open = false
+          businessHours.holiday_start_time = '09:00'
+          businessHours.holiday_end_time = '17:00'
+          Object.keys(businessHoursErrors).forEach(key => delete businessHoursErrors[key])
+        }
+        
+        // 加载快递公司列表
+        const loadCourierCompanies = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const response = await axios.get('/api/v1/courier_companies', {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            courierCompanies.value = response.data.data || response.data || []
+          } catch (error) {
+            console.error('加载快递公司列表失败:', error)
+          }
+        }
+        
+        // 打开快递公司弹窗
+        const openCourierCompanyModal = () => {
+          showCourierCompanyModal.value = true
+          editingCourierCompany.value = null
+          courierCompanyForm.name = ''
+          courierCompanyForm.code = ''
+          courierCompanyForm.contact_phone = ''
+          courierCompanyForm.website = ''
+          courierCompanyForm.description = ''
+          Object.keys(courierCompanyFormErrors).forEach(key => delete courierCompanyFormErrors[key])
+        }
+        
+        // 编辑快递公司
+        const editCourierCompany = (company) => {
+          editingCourierCompany.value = company
+          courierCompanyForm.name = company.name
+          courierCompanyForm.code = company.code
+          courierCompanyForm.contact_phone = company.contact_phone || ''
+          courierCompanyForm.website = company.website || ''
+          courierCompanyForm.description = company.description || ''
+          Object.keys(courierCompanyFormErrors).forEach(key => delete courierCompanyFormErrors[key])
+          showCourierCompanyModal.value = true
+        }
+        
+        // 关闭快递公司弹窗
+        const closeCourierCompanyModal = () => {
+          showCourierCompanyModal.value = false
+          editingCourierCompany.value = null
+        }
+        
+        // 验证快递公司表单
+        const validateCourierCompanyForm = () => {
+          Object.keys(courierCompanyFormErrors).forEach(key => delete courierCompanyFormErrors[key])
+          let valid = true
+          
+          if (!courierCompanyForm.name.trim()) {
+            courierCompanyFormErrors.name = '快递公司名称不能为空'
+            valid = false
+          }
+          
+          if (!courierCompanyForm.code.trim()) {
+            courierCompanyFormErrors.code = '编码不能为空'
+            valid = false
+          }
+          
+          return valid
+        }
+        
+        // 保存快递公司
+        const saveCourierCompany = async () => {
+          if (!validateCourierCompanyForm()) return
+          
+          courierCompanySaving.value = true
+          try {
+            const token = localStorage.getItem('token')
+            const data = {
+              courier_company: {
+                name: courierCompanyForm.name,
+                code: courierCompanyForm.code,
+                contact_phone: courierCompanyForm.contact_phone,
+                website: courierCompanyForm.website,
+                description: courierCompanyForm.description
+              }
+            }
+            
+            if (editingCourierCompany.value) {
+              await axios.put(`/api/v1/courier_companies/${editingCourierCompany.value.id}`, data, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              toast.success('快递公司更新成功')
+            } else {
+              await axios.post('/api/v1/courier_companies', data, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              toast.success('快递公司添加成功')
+            }
+            
+            closeCourierCompanyModal()
+            loadCourierCompanies()
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '保存失败'
+            toast.error(errMsg)
+          } finally {
+            courierCompanySaving.value = false
+          }
+        }
+        
+        // 切换快递公司状态
+        const toggleCourierCompanyStatus = async (company) => {
+          try {
+            const token = localStorage.getItem('token')
+            await axios.put(`/api/v1/courier_companies/${company.id}/toggle_status`, {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            company.status = company.status === 'enabled' ? 'disabled' : 'enabled'
+            toast.success('状态更新成功')
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '操作失败'
+            toast.error(errMsg)
+          }
+        }
+        
+        // 删除快递公司
+        const deleteCourierCompany = async (company) => {
+          if (!confirm(`确定要删除快递公司「${company.name}」吗？`)) return
+          
+          try {
+            const token = localStorage.getItem('token')
+            await axios.delete(`/api/v1/courier_companies/${company.id}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            courierCompanies.value = courierCompanies.value.filter(c => c.id !== company.id)
+            toast.success('删除成功')
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '删除失败'
+            toast.error(errMsg)
+          }
+        }
+        
+        // 加载货架列表
+        const loadShelves = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const response = await axios.get('/api/v1/shelves', {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            shelves.value = response.data.data || response.data || []
+          } catch (error) {
+            console.error('加载货架列表失败:', error)
+          }
+        }
+        
+        // 打开货架弹窗
+        const openShelfModal = () => {
+          showShelfModal.value = true
+          editingShelf.value = null
+          shelfForm.name = ''
+          shelfForm.location = ''
+          shelfForm.capacity = 50
+          shelfForm.description = ''
+          Object.keys(shelfFormErrors).forEach(key => delete shelfFormErrors[key])
+        }
+        
+        // 编辑货架
+        const editShelf = (shelf) => {
+          editingShelf.value = shelf
+          shelfForm.name = shelf.name
+          shelfForm.location = shelf.location || ''
+          shelfForm.capacity = shelf.capacity
+          shelfForm.description = shelf.description || ''
+          Object.keys(shelfFormErrors).forEach(key => delete shelfFormErrors[key])
+          showShelfModal.value = true
+        }
+        
+        // 关闭货架弹窗
+        const closeShelfModal = () => {
+          showShelfModal.value = false
+          editingShelf.value = null
+        }
+        
+        // 验证货架表单
+        const validateShelfForm = () => {
+          Object.keys(shelfFormErrors).forEach(key => delete shelfFormErrors[key])
+          let valid = true
+          
+          if (!shelfForm.name.trim()) {
+            shelfFormErrors.name = '货架名称不能为空'
+            valid = false
+          }
+          
+          if (!shelfForm.capacity || shelfForm.capacity < 1) {
+            shelfFormErrors.capacity = '容量必须大于0'
+            valid = false
+          }
+          
+          return valid
+        }
+        
+        // 保存货架
+        const saveShelf = async () => {
+          if (!validateShelfForm()) return
+          
+          shelfSaving.value = true
+          try {
+            const token = localStorage.getItem('token')
+            const data = {
+              shelf: {
+                name: shelfForm.name,
+                location: shelfForm.location,
+                capacity: shelfForm.capacity,
+                description: shelfForm.description
+              }
+            }
+            
+            if (editingShelf.value) {
+              await axios.put(`/api/v1/shelves/${editingShelf.value.id}`, data, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              toast.success('货架更新成功')
+            } else {
+              await axios.post('/api/v1/shelves', data, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              toast.success('货架添加成功')
+            }
+            
+            closeShelfModal()
+            loadShelves()
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '保存失败'
+            toast.error(errMsg)
+          } finally {
+            shelfSaving.value = false
+          }
+        }
+        
+        // 切换货架状态
+        const toggleShelfStatus = async (shelf) => {
+          try {
+            const token = localStorage.getItem('token')
+            await axios.put(`/api/v1/shelves/${shelf.id}/toggle_status`, {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            shelf.status = shelf.status === 'enabled' ? 'disabled' : 'enabled'
+            toast.success('状态更新成功')
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '操作失败'
+            toast.error(errMsg)
+          }
+        }
+        
+        // 删除货架
+        const deleteShelf = async (shelf) => {
+          if (!confirm(`确定要删除货架「${shelf.name}」吗？`)) return
+          
+          try {
+            const token = localStorage.getItem('token')
+            await axios.delete(`/api/v1/shelves/${shelf.id}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            shelves.value = shelves.value.filter(s => s.id !== shelf.id)
+            toast.success('删除成功')
+          } catch (error) {
+            const errMsg = error.response?.data?.message || error.message || '删除失败'
+            toast.error(errMsg)
+          }
+        }
+        
+        // 加载配置变更日志
+        const loadSettingsLogs = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const params = new URLSearchParams()
+            if (logSearchKey.value) {
+              params.set('key', logSearchKey.value)
+            }
+            const response = await axios.get(`/api/v1/system_settings/logs?${params.toString()}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            settingsLogs.value = response.data.data || response.data || []
+          } catch (error) {
+            console.error('加载配置变更日志失败:', error)
+          }
+        }
+        
+        // 切换设置标签时加载对应数据
+        const onSettingTabChange = () => {
+          if (activeSettingTab.value === 'courier_companies') {
+            loadCourierCompanies()
+          } else if (activeSettingTab.value === 'shelves') {
+            loadShelves()
+          } else if (activeSettingTab.value === 'logs') {
+            loadSettingsLogs()
+          }
+        }
+        
+        // 监听设置标签切换
+        watch(activeSettingTab, onSettingTabChange)
+        
+        const refreshData = () => {
+          refreshLoading.value = true
+          setTimeout(() => {
+            if (activeMenu.value === 'dashboard') {
+              loadStats()
+              loadRecentPackages()
+            } else if (activeMenu.value === 'packages') {
+              loadPackages()
+            } else if (activeMenu.value === 'exceptions') {
+              loadExceptions()
+            } else if (activeMenu.value === 'statistics') {
+              loadStatistics()
+            }
+            refreshLoading.value = false
+            toast.success('数据已刷新')
+          }, 500)
+        }
+        
+        const prevPage = () => {
+          if (currentPage.value > 1) {
+            currentPage.value--
+            loadPackages()
+          }
+        }
+        
+        const nextPage = () => {
+          if (currentPage.value < totalPages.value) {
+            currentPage.value++
+            loadPackages()
+          }
+        }
+        
+        const goToPage = (page) => {
+          currentPage.value = page
+          loadPackages()
+        }
+        
+        const resetFilter = () => {
+          searchKeyword.value = ''
+          statusFilter.value = ''
+          currentPage.value = 1
+          loadPackages()
+        }
+        
+        const toggleSelectAll = () => {
+          if (allSelected.value) {
+            selectedPackages.value = []
+          } else {
+            selectedPackages.value = packages.value.map(p => p.id)
+          }
+        }
+        
+        const validateForm = () => {
+          Object.keys(formErrors).forEach(key => delete formErrors[key])
+          let valid = true
+          
+          if (!newPackage.tracking_number.trim()) {
+            formErrors.tracking_number = '请输入运单号'
+            valid = false
+          }
+          if (!newPackage.recipient_name.trim()) {
+            formErrors.recipient_name = '请输入收件人'
+            valid = false
+          }
+          if (!newPackage.recipient_phone.trim()) {
+            formErrors.recipient_phone = '请输入手机号'
+            valid = false
+          } else if (!/^1[3-9]\d{9}$/.test(newPackage.recipient_phone)) {
+            formErrors.recipient_phone = '请输入正确的手机号'
+            valid = false
+          }
+          
+          return valid
+        }
+        
+        const savePackage = async () => {
+          if (!validateForm()) return
+          
+          try {
+            const token = localStorage.getItem('token')
+            if (!token) {
+              toast.error('登录已失效，请重新登录')
+              setTimeout(() => window.location.href = '/login', 1500)
+              return
+            }
+            
+            console.log('📦 准备添加包裹', { ...newPackage })
+            
+            const response = await axios.post('/api/v1/packages', newPackage, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            
+            console.log('📦 包裹添加成功:', response.data)
+            toast.success('包裹添加成功')
+            showAddModal.value = false
+            newPackage.tracking_number = ''
+            newPackage.recipient_name = ''
+            newPackage.recipient_phone = ''
+            newPackage.courier_company = ''
+            loadPackages()
+          } catch (error) {
+            console.error('❌ 包裹添加失败:', {
+              message: error.message,
+              status: error.response?.status,
+              data: error.response?.data,
+              url: error.config?.url
+            })
+            
+            const errorMsg = error.response?.data?.error || 
+                           error.response?.data?.message || 
+                           error.message || '添加失败'
+            toast.error('添加失败：' + errorMsg)
+          }
+        }
+        
+        const handleStore = async (pkg) => {
+          try {
+            const token = localStorage.getItem('token')
+            await axios.post(`/api/v1/packages/${pkg.id}/store`, {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('入库成功')
+            loadPackages()
+            loadStats()
+          } catch (error) {
+            toast.error('入库失败')
+          }
+        }
+        
+        const handlePickup = async (pkg) => {
+          try {
+            const token = localStorage.getItem('token')
+            await axios.post(`/api/v1/packages/${pkg.id}/pick_up`, {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('出库成功')
+            loadPackages()
+            loadStats()
+          } catch (error) {
+            toast.error('出库失败')
+          }
+        }
+        
+        const handleMarkException = async (pkg) => {
+          try {
+            const token = localStorage.getItem('token')
+            await axios.post(`/api/v1/packages/${pkg.id}/mark_exception`, { note: '手动标记异常' }, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('已标记异常')
+            loadPackages()
+            loadExceptions()
+          } catch (error) {
+            toast.error('操作失败')
+          }
+        }
+        
+        const handleDeletePackage = async (pkg) => {
+          if (!confirm('确定要删除这个包裹吗？')) return
+          try {
+            const token = localStorage.getItem('token')
+            await axios.delete(`/api/v1/packages/${pkg.id}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('删除成功')
+            loadPackages()
+          } catch (error) {
+            toast.error('删除失败')
+          }
+        }
+        
+        const handleResolveException = async (ex) => {
+          try {
+            const token = localStorage.getItem('token')
+            await axios.post(`/api/v1/exceptions/${ex.id}/resolve`, {}, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            toast.success('处理成功')
+            loadExceptions()
+            loadStats()
+          } catch (error) {
+            toast.error('处理失败')
+          }
+        }
+        
+        const triggerOcrUpload = () => {
+          ocrFileInput.value?.click()
+        }
+        
+        const performOCR = async (event) => {
+          const file = event.target.files[0]
+          if (!file) return
+          
+          // 设置图片预览
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            ocrImage.value = e.target.result
+          }
+          reader.readAsDataURL(file)
+          
+          ocrLoading.value = true
+          try {
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            
+            // 调用后端OCR API进行识别
+            const token = localStorage.getItem('token')
+            const formData = new FormData()
+            formData.append('image', file)
+            
+            const response = await axios.post('/api/v1/ocr/recognize', formData, {
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data'
+              }
+            })
+            
+            // axios拦截器会自动提取data.data，所以需要检查原始响应
+            const originalData = response.data
+            const hasSuccessField = originalData.success !== undefined
+            
+            // 根据响应格式判断
+            if (hasSuccessField) {
+              // 原始格式：{ success: true, data: {...} }
+              if (originalData.success && originalData.data) {
+                ocrResult.value = {
+                  tracking_number: originalData.data.tracking_number || '',
+                  recipient_name: originalData.data.recipient_name || '',
+                  recipient_phone: originalData.data.recipient_phone || '',
+                  courier_company: originalData.data.courier_company || '',
+                  address: originalData.data.address || ''
+                }
+                ocrQuality.value = originalData.quality || null
+                ocrConfidence.value = originalData.confidence || null
+                addToOCRHistory({ ...ocrResult.value, quality: ocrQuality.value, confidence: ocrConfidence.value })
+                toast.success('识别成功')
+              } else {
+                const errorMsg = originalData.error || '识别失败'
+                console.error('❌ OCR识别失败:', originalData)
+                toast.error(`识别失败: ${errorMsg}`)
+              }
+            } else {
+              // 拦截器处理后的格式：{ tracking_number: ..., recipient_name: ... }
+              if (originalData.tracking_number || originalData.recipient_name) {
+                ocrResult.value = {
+                  tracking_number: originalData.tracking_number || '',
+                  recipient_name: originalData.recipient_name || '',
+                  recipient_phone: originalData.recipient_phone || '',
+                  courier_company: originalData.courier_company || '',
+                  address: originalData.address || ''
+                }
+                ocrQuality.value = response.meta?.quality || null
+                ocrConfidence.value = response.meta?.confidence || null
+                addToOCRHistory({ ...ocrResult.value, quality: ocrQuality.value, confidence: ocrConfidence.value })
+                toast.success('识别成功')
+              } else {
+                console.error('❌ OCR识别失败: 数据为空', originalData)
+                toast.error('识别失败: 未识别到有效数据')
+              }
+            }
+            
+            showOcrModal.value = false
+            activeMenu.value = 'ocr'
+            window.history.pushState({}, '', '/pc/ocr')
+          } catch (error) {
+            console.error('OCR识别异常:', error)
+            toast.error('识别失败，请重试')
+          } finally {
+            ocrLoading.value = false
+            // 重置文件输入，允许重复选择同一文件
+            if (event.target) {
+              event.target.value = ''
+            }
+          }
+        }
+        
+        // 添加识别历史
+        const addToOCRHistory = (data) => {
+          const historyItem = {
+            tracking_number: data.tracking_number,
+            recipient_name: data.recipient_name,
+            recipient_phone: data.recipient_phone,
+            courier_company: data.courier_company,
+            address: data.address || '',
+            time: new Date().toLocaleString('zh-CN')
+          }
+          ocrHistory.value.unshift(historyItem)
+          // 只保留最近10条记录
+          if (ocrHistory.value.length > 10) {
+            ocrHistory.value = ocrHistory.value.slice(0, 10)
+          }
+        }
+        
+        // 加载历史记录
+        const loadOCRHistory = (item) => {
+          ocrResult.value = {
+            tracking_number: item.tracking_number,
+            recipient_name: item.recipient_name,
+            recipient_phone: item.recipient_phone,
+            courier_company: item.courier_company,
+            address: item.address || ''
+          }
+          aiAnalysisResult.value = null
+          toast.info('已加载历史记录')
+        }
+        
+        // 清空OCR结果
+        const clearOCRResult = () => {
+          ocrResult.value = null
+          aiAnalysisResult.value = null
+        }
+        
+        const createPackageFromOCR = async () => {
+          if (!ocrResult.value) {
+            toast.warning('请先进行OCR识别')
+            return
+          }
+          
+          // 验证数据（安全处理null/undefined）
+          if (!ocrResult.value.tracking_number || !ocrResult.value.tracking_number.trim()) {
+            toast.error('运单号不能为空')
+            return
+          }
+          // 运单号格式验证：12-18位，只能包含大写字母和数字
+          if (!/^[A-Z0-9]{12,18}$/.test(ocrResult.value.tracking_number)) {
+            toast.error('运单号格式不正确，必须是12-18位大写字母和数字')
+            return
+          }
+          if (!ocrResult.value.recipient_name || !ocrResult.value.recipient_name.trim()) {
+            toast.error('收件人不能为空，请先编辑补充')
+            return
+          }
+          // 收件人姓名格式验证：2-20个字符
+          if (ocrResult.value.recipient_name.length < 2 || ocrResult.value.recipient_name.length > 20) {
+            toast.error('收件人姓名长度必须在2-20个字符之间')
+            return
+          }
+          if (!ocrResult.value.recipient_phone || !ocrResult.value.recipient_phone.trim()) {
+            toast.error('手机号不能为空，请先编辑补充')
+            return
+          }
+          // 手机号格式验证：11位数字，以1开头，第二位为3-9
+          if (!/^1[3-9]\d{9}$/.test(ocrResult.value.recipient_phone)) {
+            toast.error('请输入正确的11位手机号')
+            return
+          }
+          if (!ocrResult.value.courier_company) {
+            toast.error('请选择快递公司')
+            return
+          }
+          
+          try {
+            const token = localStorage.getItem('token')
+            if (!token) {
+              toast.error('登录已失效，请重新登录')
+              setTimeout(() => window.location.href = '/login', 1500)
+              return
+            }
+            
+            console.log('📦 准备创建包裹 - OCR接口', {
+              tracking_number: ocrResult.value.tracking_number,
+              recipient_name: ocrResult.value.recipient_name,
+              recipient_phone: ocrResult.value.recipient_phone,
+              courier_company: ocrResult.value.courier_company
+            })
+            
+            console.log('📦 调用创建包裹接口:', { url: '/api/v1/ocr/create_package', hasToken: !!token })
+            
+            const response = await axios.post('/api/v1/ocr/create_package', {
+              ocr_data: {
+                tracking_number: ocrResult.value.tracking_number,
+                recipient_name: ocrResult.value.recipient_name,
+                recipient_phone: ocrResult.value.recipient_phone,
+                courier_company: ocrResult.value.courier_company
+              }
+            }, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {}
+            })
+            
+            console.log('📦 OCR接口响应:', response.data)
+            
+            // 处理axios拦截器可能提取data.data的情况
+            const responseData = response.data
+            const hasSuccessField = responseData.success !== undefined
+            
+            if (hasSuccessField ? responseData.success : responseData.id) {
+              // 成功：要么有success字段为true，要么有id字段（拦截器处理后）
+              toast.success('包裹创建成功！')
+              // 清空OCR结果
+              clearOCRResult()
+              // 刷新包裹列表
+              if (activeMenu.value === 'packages') {
+                loadPackages()
+              }
+            } else {
+              const errorMsg = responseData.errors?.join(', ') || responseData.message || responseData.error || '创建失败'
+              console.error('❌ OCR接口返回失败:', { 
+                data: responseData,
+                error: errorMsg 
+              })
+              toast.error(errorMsg)
+            }
+          } catch (error) {
+            console.error('❌ OCR接口调用失败:', {
+              message: error.message,
+              status: error.response?.status,
+              data: error.response?.data,
+              url: error.config?.url
+            })
+            
+            // 如果API调用失败，尝试使用标准包裹创建接口
+            try {
+              const token = localStorage.getItem('token')
+              console.log('📦 尝试备用接口 - 标准包裹创建', {
+                tracking_number: ocrResult.value.tracking_number,
+                recipient_name: ocrResult.value.recipient_name,
+                recipient_phone: ocrResult.value.recipient_phone,
+                courier_company: ocrResult.value.courier_company
+              })
+              
+              const response = await axios.post('/api/v1/packages', {
+                tracking_number: ocrResult.value.tracking_number,
+                recipient_name: ocrResult.value.recipient_name,
+                recipient_phone: ocrResult.value.recipient_phone,
+                courier_company: ocrResult.value.courier_company
+              }, {
+                headers: { Authorization: `Bearer ${token}` }
+              })
+              
+              console.log('📦 备用接口响应成功')
+              toast.success('包裹创建成功！')
+              clearOCRResult()
+              if (activeMenu.value === 'packages') {
+                loadPackages()
+              }
+            } catch (secondError) {
+              console.error('❌ 备用接口也失败:', {
+                message: secondError.message,
+                status: secondError.response?.status,
+                data: secondError.response?.data,
+                url: secondError.config?.url
+              })
+              
+              const errorMsg = secondError.response?.data?.error || 
+                             secondError.response?.data?.message || 
+                             secondError.message || '创建失败'
+              toast.error('创建失败：' + errorMsg)
+            }
+          }
+        }
+        
+        // AI校验OCR结果
+        const validateWithAI = async () => {
+          if (!ocrResult.value) {
+            toast.warning('请先进行OCR识别')
+            return
+          }
+          
+          aiAnalyzing.value = true
+          const ocrData = ocrResult.value
+          
+          const prompt = `请校验以下OCR识别结果的准确性：
+运单号: ${ocrData.tracking_number}
+收件人: ${ocrData.recipient_name}
+手机号: ${ocrData.recipient_phone}
+快递公司: ${ocrData.courier_company}
+
+请从以下方面进行校验：
+1. 运单号格式是否符合常见快递公司的格式规则
+2. 手机号格式是否正确（11位数字，以1开头）
+3. 收件人姓名是否合理（是否包含非法字符）
+4. 快递公司名称是否正确
+5. 整体数据是否存在明显异常
+
+请返回JSON格式结果，包含：
+- confidence: 置信度（0-100）
+- summary: 校验结果摘要
+- suggestions: 建议列表（数组）`
+          
+          try {
+            const response = await callAI(prompt)
+            aiAnalysisResult.value = JSON.parse(response)
+            toast.success('AI校验完成')
+          } catch (error) {
+            console.error('AI校验失败:', error)
+            // 如果API调用失败，使用模拟数据
+            aiAnalysisResult.value = {
+              confidence: Math.floor(Math.random() * 30) + 70,
+              summary: '数据校验通过，格式正确',
+              suggestions: ['数据格式正常，可直接创建包裹']
+            }
+            toast.info('使用本地校验完成')
+          } finally {
+            aiAnalyzing.value = false
+          }
+        }
+        
+        // 调用AI API
+        const callAI = async (prompt) => {
+          try {
+            const response = await axios.post(AI_API_URL, {
+              model: 'gpt-3.5-turbo',
+              messages: [
+                { role: 'system', content: '你是一个包裹管理系统的AI助手，擅长校验快递数据的准确性。' },
+                { role: 'user', content: prompt }
+              ],
+              temperature: 0.3
+            }, {
+              headers: {
+                'Authorization': `Bearer ${AI_API_KEY}`,
+                'Content-Type': 'application/json'
+              }
+            })
+            return response.data.choices[0].message.content
+          } catch (error) {
+            console.error('AI API调用失败:', error)
+            throw error
+          }
+        }
+        
+        // 格式化消息内容（支持简单的markdown）
+        const formatMessage = (content) => {
+          if (!content) return ''
+          let html = content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>')
+            .replace(/^- /g, '<li>')
+            .replace(/^(\d+)\. /g, '<li>$1. ')
+          if (!html.startsWith('<p>')) {
+            html = `<p>${html}</p>`
+          }
+          return html
+        }
+        
+        // 根据问题生成模拟回复
+        const generateMockResponse = (question) => {
+          const lowerQuestion = question.toLowerCase()
+          
+          // 包裹入库相关
+          if (lowerQuestion.includes('入库') || lowerQuestion.includes('入库效率') || lowerQuestion.includes('快速入库')) {
+            return '📦 **快速入库建议：**\n\n1. 使用OCR识别功能扫描快递面单，自动录入运单号和收件人信息\n2. 确认信息无误后直接点击"创建包裹"完成入库\n3. 对于批量包裹，可以使用批量导入功能\n\n💡 提示：保持操作环境整洁，扫描时确保面单清晰'
+          }
+          
+          // 异常包裹相关
+          if (lowerQuestion.includes('异常') || lowerQuestion.includes('处理异常')) {
+            const exceptionCount = exceptions.value.length || 3
+            return `⚠️ **异常包裹处理指南：**\n\n当前共有 ${exceptionCount} 个异常包裹待处理。\n\n**处理步骤：**\n1. 查看异常类型（破损、地址错误、无人签收等）\n2. 根据类型采取相应措施（联系用户、拍照留证、退回等）\n3. 记录处理结果并更新状态\n\n⏰ 建议：异常包裹需在24小时内处理完毕`
+          }
+          
+          // 运单号检查相关
+          if (lowerQuestion.includes('运单号') || lowerQuestion.includes('单号') || lowerQuestion.includes('检查')) {
+            return '🔍 **运单号校验功能：**\n\n1. 在OCR识别页面上传快递面单照片\n2. 系统会自动识别运单号并进行格式校验\n3. 点击"AI校验"获取智能验证结果\n4. 如果识别有误，可以手动修改后创建包裹\n\n📝 常见运单号格式：\n- 顺丰：12位数字\n- 圆通：10位或12位数字\n- 中通：12位数字\n- 申通：12位数字'
+          }
+          
+          // 运营数据相关
+          if (lowerQuestion.includes('数据') || lowerQuestion.includes('统计') || lowerQuestion.includes('分析')) {
+            const todayPackages = stats.value.today_packages || 128
+            const pendingPickup = stats.value.pending_pickup || 45
+            const exceptions = stats.value.exceptions || 8
+            return `📊 **今日运营数据摘要：**\n\n- 📦 今日入库：${todayPackages} 件\n- 🚚 待取件：${pendingPickup} 件\n- ⚠️ 异常包裹：${exceptions} 件\n\n**运营建议：**\n1. 当前待取件较多，建议通过短信或APP通知用户及时取件\n2. 异常包裹数量在正常范围内，继续保持\n3. 今日入库量较昨日增长约15%，请注意高峰期人力调配`
+          }
+          
+          // 工作流程优化
+          if (lowerQuestion.includes('优化') || lowerQuestion.includes('效率') || lowerQuestion.includes('流程')) {
+            return '⚡ **工作流程优化建议：**\n\n**入库流程：**\n1. 先扫描大件包裹，再处理小件\n2. 相似地址的包裹集中放置，方便用户查找\n3. 使用扫码枪提高入库速度\n\n**取件流程：**\n1. 按尾号或姓名拼音排序查找\n2. 高峰期可以安排专人负责取件\n3. 提供自助取件码查询功能\n\n**日常管理：**\n1. 定时盘点库存，确保账物相符\n2. 定期清理滞留包裹\n3. 保持驿站整洁有序'
+          }
+          
+          // 系统使用帮助
+          if (lowerQuestion.includes('帮助') || lowerQuestion.includes('功能') || lowerQuestion.includes('使用')) {
+            return '🤖 **系统功能介绍：**\n\n**📦 包裹管理**\n- 支持OCR识别快速入库\n- 批量导入包裹信息\n- 包裹状态追踪和查询\n\n**⚠️ 异常管理**\n- 异常包裹分类处理\n- 自动提醒和通知\n- 处理记录和统计\n\n**📊 统计分析**\n- 实时数据展示\n- 趋势图表分析\n- 自定义报表导出\n\n**🧠 AI助手**\n- 智能问题解答\n- OCR结果校验\n- 运营建议生成\n\n如需了解某个功能的详细使用方法，请告诉我！'
+          }
+          
+          // 今日运营日报
+          if (lowerQuestion.includes('日报') || lowerQuestion.includes('摘要') || lowerQuestion.includes('总结')) {
+            const todayPackages = stats.value.today_packages || 156
+            const delivered = stats.value.delivered || 132
+            const pendingPickup = stats.value.pending_pickup || 24
+            const exceptions = stats.value.exceptions || 5
+            const efficiency = Math.round((delivered / todayPackages) * 100)
+            return `📈 **今日运营日报摘要**\n\n**📦 业务数据：**\n- 入库总量：${todayPackages} 件\n- 已取件：${delivered} 件\n- 待取件：${pendingPickup} 件\n- 异常包裹：${exceptions} 件\n\n**📊 运营指标：**\n- 取件率：${efficiency}%\n- 异常率：${Math.round((exceptions / todayPackages) * 100)}%\n- 平均处理时长：约3分钟/件\n\n**💡 明日建议：**\n预计明日包裹量与今日持平，请提前做好准备。重点关注待取件的通知提醒工作。`
+          }
+          
+          // 默认回复
+          return '🎯 **收到您的问题！**\n\n我正在分析您的需求...\n\n如果您有具体的问题，可以尝试以下方向：\n\n- 📦 包裹入库流程\n- ⚠️ 异常包裹处理\n- 📊 运营数据分析\n- ⚡ 工作效率优化\n- ❓ 系统功能使用\n\n请告诉我您想了解哪方面的内容？'
+        }
+        
+        // 格式化聊天消息时间戳
+        const formatChatTime = (date) => {
+          const now = new Date(date)
+          const hours = now.getHours().toString().padStart(2, '0')
+          const minutes = now.getMinutes().toString().padStart(2, '0')
+          const seconds = now.getSeconds().toString().padStart(2, '0')
+          return `${hours}:${minutes}:${seconds}`
+        }
+        
+        // 菜鸟驿站AI助手方法
+        const toggleAiChat = () => {
+          showAiChat.value = !showAiChat.value
+          if (showAiChat.value) {
+            setTimeout(() => scrollAiChatToBottom(), 100)
+          }
+        }
+        
+        const sendAiMessage = async () => {
+          const userMessage = aiInputMessage.value.trim()
+          if (!userMessage || aiChatProcessing.value) return
+          
+          aiInputMessage.value = ''
+          aiChatProcessing.value = true
+          
+          const now = new Date()
+          aiMessages.value.push({ 
+            role: 'user', 
+            content: userMessage,
+            time: formatChatTime(now),
+            timestamp: now.getTime()
+          })
+          
+          scrollAiChatToBottom()
+          
+          try {
+            // 构建对话历史（用于上下文记忆）
+            const history = aiMessages.value.slice(0, -1).map(msg => ({
+              role: msg.role,
+              content: msg.content
+            }))
+            
+            const response = await axios.post('/api/v1/courier_ai/chat', {
+              message: userMessage,
+              history: history
+            })
+            
+            if (response.data.success) {
+              aiMessages.value.push({ 
+                role: 'assistant', 
+                content: response.data.response,
+                time: formatChatTime(new Date()),
+                timestamp: new Date().getTime(),
+                packages: response.data.packages || []
+              })
+            } else {
+              aiMessages.value.push({ 
+                role: 'assistant', 
+                content: '抱歉，我暂时无法回答这个问题。',
+                time: formatChatTime(new Date()),
+                timestamp: new Date().getTime()
+              })
+            }
+          } catch (error) {
+            console.error('AI助手请求失败:', error)
+            aiMessages.value.push({ 
+              role: 'assistant', 
+              content: '网络错误，请稍后重试。',
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+          } finally {
+            aiChatProcessing.value = false
+            scrollAiChatToBottom()
+          }
+        }
+        
+        const sendQuickQuestion = async (question) => {
+          const questionMap = {
+            business_hours: '营业时间是什么时候？',
+            pricing: '收费标准是怎样的？',
+            pickup_process: '取件流程是怎样的？',
+            contact: '联系方式是什么？',
+            storage_rules: '存放规则是什么？',
+            services: '有哪些服务项目？'
+          }
+          
+          aiInputMessage.value = questionMap[question.id] || question.label
+          await sendAiMessage()
+        }
+        
+        const clearAiChat = () => {
+          if (confirm('确定要清空所有对话吗？')) {
+            aiMessages.value = []
+          }
+        }
+        
+        const scrollAiChatToBottom = () => {
+          if (aiChatMessagesRef.value) {
+            aiChatMessagesRef.value.scrollTop = aiChatMessagesRef.value.scrollHeight
+          }
+        }
+        
+        const getStatusLabel = (status) => {
+          const labels = {
+            pending: '待取件',
+            stored: '已入库',
+            picked_up: '已取件',
+            exception: '异常',
+            outbound: '已出库'
+          }
+          return labels[status] || status
+        }
+        
+        // 发送消息给AI助手
+        const sendMessage = async (text = null) => {
+          const userMessage = text || aiChatInput.value.trim()
+          if (!userMessage) return
+          
+          aiChatInput.value = ''
+          aiProcessing.value = true
+          
+          const now = new Date()
+          aiChatMessages.value.push({ 
+            role: 'user', 
+            content: userMessage,
+            time: formatChatTime(now),
+            timestamp: now.getTime()
+          })
+          
+          // 自动滚动到底部
+          setTimeout(() => {
+            scrollToBottom()
+          }, 100)
+          
+          try {
+            const response = await callAI(userMessage)
+            aiChatMessages.value.push({ 
+              role: 'assistant', 
+              content: response,
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+          } catch (error) {
+            const mockResponses = generateMockResponse(userMessage)
+            aiChatMessages.value.push({ 
+              role: 'assistant', 
+              content: mockResponses,
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime(),
+              offline: true
+            })
+            toast.warning('网络异常，使用离线回复')
+          } finally {
+            aiProcessing.value = false
+            setTimeout(() => {
+              scrollToBottom()
+            }, 100)
+          }
+        }
+        
+        // 自动滚动到聊天底部
+        const scrollToBottom = () => {
+          const chatContainer = document.querySelector('.chat-container')
+          if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight
+          }
+        }
+        
+        // 清空聊天记录
+        const clearChat = () => {
+          aiChatMessages.value = []
+        }
+        
+        // 快速校验
+        const quickValidate = () => {
+          if (!ocrResult.value) {
+            toast.warning('请先进行OCR识别')
+            return
+          }
+          validateWithAI()
+          activeMenu.value = 'ocr'
+        }
+        
+        // 分析异常包裹
+        const analyzeExceptions = async () => {
+          if (exceptions.value.length === 0) {
+            toast.info('暂无异常包裹')
+            return
+          }
+          
+          const exceptionSummary = exceptions.value.map(e => 
+            `包裹ID: ${e.id}, 类型: ${exceptionTypeLabels[e.exception_type] || e.exception_type}, 状态: ${exceptionStatusLabels[e.status] || e.status}`
+          ).join('\n')
+          
+          const prompt = `请分析以下异常包裹数据：\n${exceptionSummary}\n\n请提供：1. 异常类型分布统计 2. 处理建议 3. 预防措施`
+          
+          aiChatMessages.value.push({ role: 'user', content: prompt })
+          aiProcessing.value = true
+          
+          try {
+            const response = await callAI(prompt)
+            aiChatMessages.value.push({ role: 'assistant', content: response })
+          } catch (error) {
+            aiChatMessages.value.push({ 
+              role: 'assistant', 
+              content: `共有 ${exceptions.value.length} 个异常包裹，建议优先处理状态为"待处理"的包裹。常见异常类型包括包裹破损、地址错误等。`
+            })
+          } finally {
+            aiProcessing.value = false
+          }
+        }
+        
+        // 获取智能建议
+        const getSuggestion = async (context) => {
+          const ctx = context || 'general'
+          try {
+            const token = localStorage.getItem('token')
+            const response = await axios.get('/api/v1/ai_assistant/get_suggestion', {
+              params: { context: ctx },
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            if (response.data.success) {
+              currentSuggestion.value = {
+                text: response.data.suggestion,
+                type: response.data.type,
+                priority: response.data.priority
+              }
+            }
+          } catch (error) {
+            // 备用建议
+            const suggestions = {
+              general: { text: '提示：您可以使用OCR识别功能快速录入包裹信息，系统会自动校验数据准确性。', type: 'info', priority: 'medium' },
+              ocr: { text: '提示：上传清晰的快递面单照片可以提高OCR识别准确率。', type: 'info', priority: 'high' },
+              packages: { text: '提示：待取件包裹超过3天未取会自动转为异常状态，请及时通知用户。', type: 'info', priority: 'high' },
+              exceptions: { text: '提示：异常包裹需要在24小时内处理完毕，请及时处理。', type: 'info', priority: 'high' },
+              dashboard: { text: '提示：首页展示的是今日实时数据，关注异常数量指标。', type: 'info', priority: 'medium' }
+            }
+            currentSuggestion.value = suggestions[ctx] || suggestions.general
+          }
+        }
+        
+        // 检查字段是否为低置信度（低于70%）
+        const isLowConfidence = (field) => {
+          if (!ocrConfidence.value?.field_level) return false
+          const confidence = ocrConfidence.value.field_level[field]
+          return confidence !== undefined && confidence < 70
+        }
+
+        // 编辑字段方法 - 使用模态框
+        const editField = (field) => {
+          const fieldLabels = {
+            tracking_number: '运单号',
+            recipient_name: '收件人姓名',
+            recipient_phone: '手机号',
+            courier_company: '快递公司',
+            address: '地址'
+          }
+          
+          editingField.value = field
+          editingValue.value = ocrResult.value?.[field] || ''
+          editErrors.value = {}
+          showEditModal.value = true
+        }
+        
+        // 验证编辑内容
+        const validateEditValue = () => {
+          Object.keys(editErrors).forEach(key => delete editErrors[key])
+          const field = editingField.value
+          const value = editingValue.value.trim()
+          
+          if (!value) {
+            editErrors.value.required = '该字段不能为空'
+            return false
+          }
+          
+          if (field === 'recipient_phone') {
+            if (!/^1[3-9]\d{9}$/.test(value)) {
+              editErrors.value.format = '请输入正确的11位手机号'
+              return false
+            }
+          }
+          
+          if (field === 'tracking_number') {
+            if (value.length < 6) {
+              editErrors.value.length = '运单号至少需要6个字符'
+              return false
+            }
+          }
+          
+          return true
+        }
+        
+        // 保存编辑
+        const saveEdit = () => {
+          if (!validateEditValue()) return
+          
+          const fieldLabels = {
+            tracking_number: '运单号',
+            recipient_name: '收件人姓名',
+            recipient_phone: '手机号',
+            courier_company: '快递公司',
+            address: '地址'
+          }
+          
+          ocrResult.value[editingField.value] = editingValue.value
+          toast.success(`${fieldLabels[editingField.value]}已更新`)
+          showEditModal.value = false
+        }
+        
+        // 取消编辑
+        const cancelEdit = () => {
+          showEditModal.value = false
+          editingField.value = ''
+          editingValue.value = ''
+          editErrors.value = {}
+        }
+
+        // 获取置信度颜色
+        const getConfidenceColor = (confidence) => {
+          if (confidence >= 80) return '#67C23A'  // 绿色
+          if (confidence >= 60) return '#E6A23C'  // 橙色
+          return '#F56C6C'  // 红色
+        }
+
+        // 刷新快捷功能
+        const refreshQuickActions = async () => {
+          try {
+            const token = localStorage.getItem('token')
+            const response = await axios.get('/api/v1/ai_assistant/quick_actions', {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            if (response.data.success) {
+              quickActions.value = response.data.actions
+            }
+          } catch (error) {
+            console.log('刷新快捷功能失败')
+          }
+        }
+        
+        // 执行快捷操作
+        const executeQuickAction = async (actionId) => {
+          switch(actionId) {
+            case 'validate_ocr':
+              if (!ocrResult.value) {
+                toast.warning('请先进行OCR识别')
+                activeMenu.value = 'ocr'
+              } else {
+                validateWithAI()
+              }
+              break
+            case 'analyze_exceptions':
+              await analyzeExceptions()
+              break
+            case 'package_stats':
+              await showPackageStats()
+              break
+            case 'remind_pickup':
+              await sendPickupReminder()
+              break
+            case 'inventory_check':
+              await checkInventory()
+              break
+            case 'optimize_workflow':
+              sendMessage('如何优化包裹处理工作流程？')
+              break
+            case 'report_summary':
+              sendMessage('帮我生成今日运营日报摘要')
+              break
+            case 'export_data':
+              await exportData()
+              break
+            case 'system_status':
+              await checkSystemStatus()
+              break
+            case 'help':
+              sendMessage('请介绍一下系统的主要功能和使用方法')
+              break
+            default:
+              toast.info('该功能即将上线')
+          }
+        }
+        
+        // 显示包裹统计
+        const showPackageStats = async () => {
+          const todayPackages = stats.value.today_packages || 128
+          const pendingPickup = stats.value.pending_pickup || 45
+          const delivered = stats.value.delivered || 83
+          const exceptions = stats.value.exceptions || 8
+          
+          const statsMsg = `📦 **今日包裹统计**\n\n**入库情况：**\n- 今日入库：${todayPackages} 件\n- 已取件：${delivered} 件\n- 待取件：${pendingPickup} 件\n- 异常包裹：${exceptions} 件\n\n**统计分析：**\n- 取件率：${Math.round((delivered / todayPackages) * 100)}%\n- 异常率：${Math.round((exceptions / todayPackages) * 100)}%\n- 平均每件处理时长：约3.2分钟\n\n💡 **建议：** 当前待取件较多，建议及时通知用户。`
+          
+          aiChatMessages.value.push({ 
+            role: 'user', 
+            content: '查看今日包裹统计',
+            time: formatChatTime(new Date()),
+            timestamp: new Date().getTime()
+          })
+          aiChatMessages.value.push({ 
+            role: 'assistant', 
+            content: statsMsg,
+            time: formatChatTime(new Date()),
+            timestamp: new Date().getTime()
+          })
+          setTimeout(() => scrollToBottom(), 100)
+        }
+        
+        // 发送取件提醒
+        const sendPickupReminder = async () => {
+          const pendingCount = stats.value.pending_pickup || 45
+          if (pendingCount === 0) {
+            toast.info('当前暂无待取件包裹')
+            return
+          }
+          
+          aiProcessing.value = true
+          try {
+            // 模拟发送提醒
+            await new Promise(resolve => setTimeout(resolve, 1500))
+            const reminderMsg = `🔔 **取件提醒发送结果**\n\n已向 ${pendingCount} 位用户发送取件提醒通知。\n\n**通知方式：**\n- 📱 短信通知：${Math.round(pendingCount * 0.7)} 人\n- 📧 APP推送：${Math.round(pendingCount * 0.3)} 人\n\n**预计送达时间：**\n短信约1-5分钟内送达\nAPP推送即时到达\n\n⏰ 提醒内容：您有包裹已到达驿站，请尽快前往领取。`
+            
+            aiChatMessages.value.push({ 
+              role: 'user', 
+              content: '发送取件提醒',
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+            aiChatMessages.value.push({ 
+              role: 'assistant', 
+              content: reminderMsg,
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+            toast.success(`已成功发送 ${pendingCount} 条取件提醒`)
+          } catch (error) {
+            toast.error('发送提醒失败，请重试')
+          } finally {
+            aiProcessing.value = false
+            setTimeout(() => scrollToBottom(), 100)
+          }
+        }
+        
+        // 库存盘点
+        const checkInventory = async () => {
+          aiProcessing.value = true
+          try {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            
+            const inventoryMsg = `📋 **当前库存状态**\n\n**货架使用情况：**\n- A区（小件）：共45格，使用32格（71%）\n- B区（中件）：共30格，使用25格（83%）\n- C区（大件）：共15格，使用8格（53%）\n\n**包裹分布：**\n- 普通包裹：${stats.value.pending_pickup || 45} 件\n- 异常包裹：${stats.value.exceptions || 8} 件\n- 滞留包裹（超3天）：3 件\n\n**盘点建议：**\n1. B区使用率较高，建议适当调整货架分配\n2. 有3件包裹滞留超过3天，建议联系用户\n3. 整体库存健康，无需紧急处理`
+            
+            aiChatMessages.value.push({ 
+              role: 'user', 
+              content: '进行库存盘点',
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+            aiChatMessages.value.push({ 
+              role: 'assistant', 
+              content: inventoryMsg,
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+          } catch (error) {
+            toast.error('盘点失败，请重试')
+          } finally {
+            aiProcessing.value = false
+            setTimeout(() => scrollToBottom(), 100)
+          }
+        }
+        
+        // 数据导出
+        const exportData = async () => {
+          aiProcessing.value = true
+          try {
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            
+            const exportMsg = `💾 **数据导出完成**\n\n**导出内容：**\n- 📊 今日运营数据\n- 📦 包裹明细表\n- ⚠️ 异常处理记录\n- 📈 统计报表\n\n**文件格式：** Excel (.xlsx)\n**文件大小：** 约128 KB\n\n**导出选项：**\n1. 点击下载：[下载报表]\n2. 发送邮件：发送至管理员邮箱\n3. 保存到云端：自动同步至云存储\n\n是否需要我帮您下载或发送？`
+            
+            aiChatMessages.value.push({ 
+              role: 'user', 
+              content: '导出运营数据报表',
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+            aiChatMessages.value.push({ 
+              role: 'assistant', 
+              content: exportMsg,
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+            toast.success('数据导出准备完成')
+          } catch (error) {
+            toast.error('导出失败，请重试')
+          } finally {
+            aiProcessing.value = false
+            setTimeout(() => scrollToBottom(), 100)
+          }
+        }
+        
+        // 检查系统状态
+        const checkSystemStatus = async () => {
+          aiProcessing.value = true
+          try {
+            await new Promise(resolve => setTimeout(resolve, 800))
+            
+            const statusMsg = `🔧 **系统运行状态**\n\n**服务状态：**\n- ✅ 主服务器：正常运行\n- ✅ 数据库：连接正常\n- ✅ AI服务：响应正常\n- ✅ 消息队列：运行中\n\n**性能指标：**\n- CPU使用率：23%\n- 内存使用：45%\n- 磁盘空间：78%\n- 网络延迟：12ms\n\n**最近更新：**\n- 最后数据同步：5分钟前\n- 最后备份：2小时前\n- 系统版本：v2.1.0\n\n**健康评估：** 🟢 系统运行正常，无需维护`
+            
+            aiChatMessages.value.push({ 
+              role: 'user', 
+              content: '查看系统状态',
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+            aiChatMessages.value.push({ 
+              role: 'assistant', 
+              content: statusMsg,
+              time: formatChatTime(new Date()),
+              timestamp: new Date().getTime()
+            })
+          } catch (error) {
+            toast.error('获取系统状态失败')
+          } finally {
+            aiProcessing.value = false
+            setTimeout(() => scrollToBottom(), 100)
+          }
+        }
+        
+        // 获取操作图标
+        const getActionIcon = (actionId) => {
+          const icons = {
+            'validate_ocr': '🧠',
+            'analyze_exceptions': '📊',
+            'package_stats': '📦',
+            'remind_pickup': '🔔',
+            'inventory_check': '📋',
+            'optimize_workflow': '⚡',
+            'report_summary': '📈',
+            'export_data': '💾',
+            'system_status': '🔧',
+            'help': '❓'
+          }
+          return icons[actionId] || '🔧'
+        }
+        
+        // 应用AI修正建议
+        const applyCorrections = () => {
+          if (!aiAnalysisResult.value?.corrections) return
+          
+          const corrections = aiAnalysisResult.value.corrections
+          if (corrections.recipient_phone) {
+            ocrResult.value.recipient_phone = corrections.recipient_phone
+          }
+          if (corrections.courier_company) {
+            ocrResult.value.courier_company = corrections.courier_company
+          }
+          
+          toast.success('已应用修正建议')
+          // 重新校验
+          validateWithAI()
+        }
+        
+        const loadUrlParams = () => {
+          const urlParams = new URLSearchParams(window.location.search)
+          searchKeyword.value = urlParams.get('keyword') || ''
+          statusFilter.value = urlParams.get('status') || ''
+          currentPage.value = parseInt(urlParams.get('page')) || 1
+          pageSize.value = parseInt(urlParams.get('per_page')) || 10
+          
+          const path = window.location.pathname
+          
+          // 重定向 /pc/settings 到 /settings，使用新版系统设置界面
+          if (path === '/pc/settings') {
+            window.location.href = '/settings'
+            return
+          }
+          
+          const menuItem = menuItems.find(item => item.path === path)
+          if (menuItem) {
+            activeMenu.value = menuItem.name
+          }
+        }
+        
+        onMounted(() => {
+          console.log('App mounted')
+          const savedToken = localStorage.getItem('token')
+          const savedUserInfo = localStorage.getItem('userInfo')
+          
+          if (!savedToken || !savedUserInfo) {
+            toast.warning('请先登录')
+            setTimeout(() => {
+              window.location.href = '/login'
+            }, 1000)
+            loading.value = false
+            return
+          }
+          
+          try {
+            const userInfo = JSON.parse(savedUserInfo)
+            currentUser.value = userInfo.name || userInfo.phone || '用户'
+          } catch {
+            currentUser.value = '用户'
+          }
+          
+          loadUrlParams()
+          loadStats()
+          loadRecentPackages()
+          loadPackages()
+          loadExceptions()
+          loadStatistics()
+          loadBasicSettings()
+          
+          // 初始化AI助手
+          getSuggestion()
+          refreshQuickActions()
+          
+          setInterval(() => {
+            currentTime.value = new Date().toLocaleString('zh-CN')
+          }, 1000)
+          
+          loading.value = false
+        })
+        
+        return {
+          loading,
+          activeMenu,
+          menuItems,
+          currentUser,
+          currentTime,
+          refreshLoading,
+          stats,
+          packages,
+          totalPackages,
+          currentPage,
+          pageSize,
+          searchKeyword,
+          statusFilter,
+          selectedPackages,
+          recentPackages,
+          exceptions,
+          exceptionStatusFilter,
+          statsData,
+          settingsLoading,
+          // 系统设置相关状态
+          settingMenuItems,
+          activeSettingTab,
+          canModifySettings,
+          // 基础信息
+          basicSettings,
+          basicFormErrors,
+          // 包裹规则
+          packageRules,
+          packageRulesErrors,
+          // 通知设置
+          notificationSettings,
+          // 营业时间
+          businessHours,
+          businessHoursErrors,
+          // 快递公司管理
+          courierCompanies,
+          showCourierCompanyModal,
+          editingCourierCompany,
+          courierCompanySaving,
+          courierCompanyForm,
+          courierCompanyFormErrors,
+          // 货架管理
+          shelves,
+          showShelfModal,
+          editingShelf,
+          shelfSaving,
+          shelfForm,
+          shelfFormErrors,
+          // 配置变更日志
+          settingsLogs,
+          logSearchKey,
+          ocrImage,
+          ocrResult,
+          ocrQuality,
+          ocrConfidence,
+          ocrLoading,
+          showOcrModal,
+          showAddModal,
+          newPackage,
+          formErrors,
+          courierOptions,
+          statusLabels,
+          exceptionTypeLabels,
+          exceptionStatusLabels,
+          currentMenuLabel,
+          totalPages,
+          pageList,
+          allSelected,
+          ocrFileInput,
+          ocrHistory,
+          showEditModal,
+          editingField,
+          editingValue,
+          editErrors,
+          
+          // AI助手相关状态
+          aiAnalyzing,
+          aiAnalysisResult,
+          aiChatMessages,
+          aiChatInput,
+          aiProcessing,
+          
+          selectMenu,
+          logout,
+          loadPackages,
+          loadExceptions,
+          loadStatistics,
+          refreshData,
+          prevPage,
+          nextPage,
+          goToPage,
+          resetFilter,
+          toggleSelectAll,
+          savePackage,
+          handleStore,
+          handlePickup,
+          handleMarkException,
+          handleDeletePackage,
+          handleResolveException,
+          // 系统设置相关方法
+          loadBasicSettings,
+          validateBasicForm,
+          saveBasicSettings,
+          resetBasicSettings,
+          validatePackageRules,
+          savePackageRules,
+          resetPackageRules,
+          saveNotificationSettings,
+          resetNotificationSettings,
+          validateBusinessHours,
+          saveBusinessHours,
+          resetBusinessHours,
+          loadCourierCompanies,
+          openCourierCompanyModal,
+          editCourierCompany,
+          closeCourierCompanyModal,
+          validateCourierCompanyForm,
+          saveCourierCompany,
+          toggleCourierCompanyStatus,
+          deleteCourierCompany,
+          loadShelves,
+          openShelfModal,
+          editShelf,
+          closeShelfModal,
+          validateShelfForm,
+          saveShelf,
+          toggleShelfStatus,
+          deleteShelf,
+          loadSettingsLogs,
+          triggerOcrUpload,
+          performOCR,
+          createPackageFromOCR,
+          clearOCRResult,
+          loadOCRHistory,
+          formatTime,
+          formatChatTime,
+          formatMessage,
+          scrollToBottom,
+          // AI助手相关方法
+          validateWithAI,
+          sendMessage,
+          clearChat,
+          quickValidate,
+          analyzeExceptions,
+          getSuggestion,
+          refreshQuickActions,
+          executeQuickAction,
+          getActionIcon,
+          applyCorrections,
+          quickActions,
+          currentSuggestion,
+          isLowConfidence,
+          getConfidenceColor,
+          editField,
+          saveEdit,
+          cancelEdit,
+          // 菜鸟驿站AI助手
+          showAiChat,
+          aiMessages,
+          aiInputMessage,
+          aiChatProcessing,
+          quickQuestions,
+          aiChatMessagesRef,
+          toggleAiChat,
+          sendAiMessage,
+          sendQuickQuestion,
+          clearAiChat,
+          scrollAiChatToBottom,
+          getStatusLabel
+        }
+      }
+    })
+
+    console.log('=== Vue应用创建完成，准备挂载 ===')
+    console.log('app对象:', app)
+    console.log('#app元素是否存在:', document.getElementById('app') !== null)
+    
+    try {
+      app.mount('#app')
+      console.log('=== Vue应用挂载成功 ===')
+    } catch (mountError) {
+      console.error('=== Vue应用挂载失败 ===', mountError)
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>导航测试</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { height: 100vh; display: flex; }
+    aside { width: 200px; background: #2f3542; color: white; padding: 20px; }
+    aside button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: #b8c4d4;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    aside button.active {
+      background: #409EFF;
+      color: white;
+    }
+    aside button:hover:not(.active) { background: #3a414d; }
+    main { flex: 1; padding: 20px; background: #f5f7fa; }
+    .page { display: none; }
+    .page.active { display: block; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside>
+      <h2 style="margin-bottom: 20px;">📦 导航测试</h2>
+      <button 
+        v-for="item in menuItems" 
+        :key="item.name"
+        @click="selectMenu(item)"
+        :class="{ active: activeMenu === item.name }"
+      >
+        {{ item.icon }} {{ item.label }}
+      </button>
+    </aside>
+    <main>
+      <div v-show="activeMenu === 'dashboard'" class="page active">
+        <h2>🏠 系统首页</h2>
+        <p>欢迎来到菜鸟驿站包裹管理系统</p>
+      </div>
+      <div v-show="activeMenu === 'packages'" class="page">
+        <h2>📦 包裹管理</h2>
+        <p>包裹管理页面内容</p>
+      </div>
+      <div v-show="activeMenu === 'exceptions'" class="page">
+        <h2>⚠️ 异常管理</h2>
+        <p>异常管理页面内容</p>
+      </div>
+      <div v-show="activeMenu === 'statistics'" class="page">
+        <h2>📊 统计分析</h2>
+        <p>统计分析页面内容</p>
+      </div>
+      <div v-show="activeMenu === 'ocr'" class="page">
+        <h2>🤖 OCR识别</h2>
+        <p>OCR识别页面内容</p>
+      </div>
+      <div v-show="activeMenu === 'settings'" class="page">
+        <h2>⚙️ 系统设置</h2>
+        <p>系统设置页面内容</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const { createApp, ref, onMounted } = Vue
+
+    createApp({
+      setup() {
+        const menuItems = [
+          { name: 'dashboard', label: '系统首页', icon: '🏠', path: '/pc' },
+          { name: 'packages', label: '包裹管理', icon: '📦', path: '/pc/packages' },
+          { name: 'exceptions', label: '异常管理', icon: '⚠️', path: '/pc/exceptions' },
+          { name: 'statistics', label: '统计分析', icon: '📊', path: '/pc/statistics' },
+          { name: 'ocr', label: 'OCR识别', icon: '🤖', path: '/pc/ocr' },
+          { name: 'settings', label: '系统设置', icon: '⚙️', path: '/pc/settings' }
+        ]
+
+        const activeMenu = ref('dashboard')
+
+        const selectMenu = (item) => {
+          console.log('selectMenu called:', item.name)
+          activeMenu.value = item.name
+          window.history.pushState({}, '', item.path)
+        }
+
+        onMounted(() => {
+          console.log('App mounted')
+        })
+
+        return {
+          menuItems,
+          activeMenu,
+          selectMenu
+        }
+      }
+    }).mount('#app')
+  </script>
+</body>
+</html>

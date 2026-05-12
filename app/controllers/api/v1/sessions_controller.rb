@@ -1,10 +1,11 @@
 module Api
   module V1
     class SessionsController < BaseController
-      skip_before_action :authenticate_user!, only: [ :create, :register ]
+      skip_before_action :authenticate_user!, only: [ :create, :register, :refresh ]
 
       def create
         user = User.find_by(phone: params[:phone])
+        remember_me = params[:remember_me] == "true"
 
         if user&.authenticate(params[:password])
           if user.disabled?
@@ -14,8 +15,15 @@ module Api
           user.update_login_info(request.remote_ip)
           OperationLog.log("user_login", user: user, request: request)
 
+          # 生成access_token和refresh_token
+          access_token = user.generate_access_token
+          refresh_token = user.generate_refresh_token(remember_me)
+
           render_json({
-            token: user.generate_jwt,
+            access_token: access_token,
+            refresh_token: refresh_token,
+            token_type: "Bearer",
+            expires_in: 2.hours.to_i,
             user: user_info(user)
           })
         else
@@ -58,8 +66,16 @@ module Api
 
         if user.save
           OperationLog.log("user_register", user: user, request: request)
+
+          # 生成access_token和refresh_token
+          access_token = user.generate_access_token
+          refresh_token = user.generate_refresh_token
+
           render_json({
-            token: user.generate_jwt,
+            access_token: access_token,
+            refresh_token: refresh_token,
+            token_type: "Bearer",
+            expires_in: 2.hours.to_i,
             user: user_info(user),
             message: "注册成功"
           })
@@ -69,8 +85,31 @@ module Api
       end
 
       def destroy
+        # 销毁当前用户的所有登录会话
+        current_user&.logout_all_sessions
         OperationLog.log("user_logout", user: current_user, request: request)
         render_json({ message: "退出登录成功" })
+      end
+
+      def refresh
+        refresh_token = params[:refresh_token] || request.headers["Refresh-Token"]
+
+        unless refresh_token.present?
+          return render_error("缺少refresh_token", status: :bad_request)
+        end
+
+        result = User.refresh_access_token(refresh_token)
+
+        if result
+          render_json({
+            access_token: result[:access_token],
+            refresh_token: result[:refresh_token],
+            token_type: "Bearer",
+            expires_in: 2.hours.to_i
+          })
+        else
+          render_error("refresh_token无效或已过期", status: :unauthorized)
+        end
       end
 
       def current
@@ -87,7 +126,8 @@ module Api
           name: user.name,
           role: user.role,
           role_name: role_name(user.role),
-          last_login_at: user.last_login_at
+          last_login_at: user.last_login_at,
+          active_session_count: user.active_session_count
         }
       end
 

@@ -1,0 +1,115 @@
+
+.manual-input-dialog[data-v-16765b4d] {
+  padding: 0 16px;
+}
+.input-hint[data-v-16765b4d] {
+  margin: 16px 0;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+}
+.input-hint p[data-v-16765b4d] {
+  margin: 0 0 8px 0;
+  font-weight: bold;
+}
+.input-hint ul[data-v-16765b4d] {
+  margin: 0;
+  padding-left: 16px;
+}
+.input-hint li[data-v-16765b4d] {
+  margin: 4px 0;
+}
+.dialog-buttons[data-v-16765b4d] {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+.dialog-buttons .van-button[data-v-16765b4d] {
+  flex: 1;
+}
+
+/* 优化扫描界面布局 */
+.scan-buttons[data-v-16765b4d] {
+  margin-top: 20px;
+}
+.scan-buttons .van-button[data-v-16765b4d] {
+  margin-bottom: 10px;
+}
+
+
+.scan[data-v-16765b4d] {
+  padding: 0;
+}
+.scan-container[data-v-16765b4d] {
+  min-height: 100vh;
+  padding: 20px;
+}
+.scan-header[data-v-16765b4d] {
+  text-align: center;
+  margin-bottom: 30px;
+}
+.scan-header h2[data-v-16765b4d] {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+}
+.scan-content[data-v-16765b4d] {
+  margin-bottom: 40px;
+}
+.scan-area[data-v-16765b4d] {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+.scan-frame[data-v-16765b4d] {
+  width: 250px;
+  height: 250px;
+  border: 2px solid #007bff;
+  position: relative;
+  margin-bottom: 20px;
+}
+.scan-line[data-v-16765b4d] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #007bff;
+  animation: scan-16765b4d 2s infinite;
+}
+@keyframes scan-16765b4d {
+0% { top: 0;
+}
+100% { top: 100%;
+}
+}
+.scan-area p[data-v-16765b4d] {
+  color: #666;
+  font-size: 14px;
+}
+.scan-buttons[data-v-16765b4d] {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.scan-history[data-v-16765b4d] {
+  margin-top: 40px;
+}
+.scan-history h3[data-v-16765b4d] {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+
+/*# sourceMappingURL=688.css.map*/

@@ -1,0 +1,25 @@
+
+.exception-management[data-v-65487139] {
+  padding: 20px;
+}
+.card-header[data-v-65487139] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.search-bar[data-v-65487139] {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+.pagination-container[data-v-65487139] {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+.exception-detail[data-v-65487139] {
+  padding: 10px 0;
+}
+
+
+/*# sourceMappingURL=480.css.map*/

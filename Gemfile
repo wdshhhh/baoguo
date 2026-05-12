@@ -56,9 +56,10 @@ gem "groupdate", "~> 6.1"
 # HTTP client for API calls
 gem "httparty", "~> 0.21"
 
-# Excel export
+# Excel export/import
 gem "caxlsx", "~> 4.0"
 gem "caxlsx_rails", "~> 0.6"
+gem "roo", "~> 2.9"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
@@ -121,3 +122,5 @@ gem "rails_admin", "~> 3.3"
 gem "cssbundling-rails"
 
 gem "rails-i18n", "~> 8.0"
+
+gem "pundit", "~> 2.5"

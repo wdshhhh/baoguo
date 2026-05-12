@@ -1,20 +1,32 @@
 const path    = require("path")
 const webpack = require("webpack")
 const { VueLoaderPlugin } = require('vue-loader')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 module.exports = {
   mode: "production",
   devtool: "source-map",
+  target: ["web", "es5"],
+  experiments: {
+    outputModule: false
+  },
   entry: {
     application: "./app/javascript/application.js",
     rails_admin: "./app/javascript/rails_admin.js",
-    app: "./app/javascript/packs/app.js"
+    app: "./app/javascript/packs/app.js",
+    app_simple: "./app/javascript/packs/app_simple.js",
+    app_test: "./app/javascript/packs/app_test.js",
+    app_basic: "./app/javascript/packs/app_basic.js",
+    app_simple_login: "./app/javascript/packs/app_simple_login.js",
+    app_debug: "./app/javascript/packs/app_debug.js",
+    app_main: "./app/javascript/packs/app_main.js"
   },
   output: {
     filename: "[name].js",
     sourceMapFilename: "[file].map",
-    chunkFormat: "module",
-    path: path.resolve(__dirname, "public/packs"),
+    path: path.resolve(__dirname, "public/assets"),
+    module: false,
+    chunkFormat: "array-push"
   },
   module: {
     rules: [
@@ -31,7 +43,7 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: [MiniCssExtractPlugin.loader, 'css-loader']
       },
       {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
@@ -41,16 +53,16 @@ module.exports = {
   },
   plugins: [
     new VueLoaderPlugin(),
-    new webpack.optimize.LimitChunkCountPlugin({
-      maxChunks: 1
+    new MiniCssExtractPlugin({
+      filename: '[name].css'
     }),
     new webpack.DefinePlugin({
       __VUE_OPTIONS_API__: true,
       __VUE_PROD_DEVTOOLS__: false
-    }),
-    new webpack.optimize.SplitChunksPlugin(),
-    new webpack.optimize.RuntimeChunkPlugin({
-      name: 'manifest'
     })
-  ]
+  ],
+  optimization: {
+    runtimeChunk: false,
+    splitChunks: false
+  }
 }

@@ -104,7 +104,7 @@
       <div class="ocr-section" style="margin-bottom: 20px;">
         <div class="ocr-header" style="display: flex; align-items: center; margin-bottom: 10px;">
           <h4 style="margin: 0; margin-right: 10px;">OCR面单识别</h4>
-          <PackageOcrUploader @ocr-result="handleOcrResult" />
+          <PackageOcrUploader @ocr-result="handleOcrResult" @package-created="handlePackageCreated" />
         </div>
         
         <!-- 实时识别结果显示区域 -->
@@ -1025,6 +1025,27 @@ export default {
       }
     }
     
+    // 处理一键创建包裹成功事件
+    const handlePackageCreated = (packageData) => {
+      console.log('包裹创建成功:', packageData)
+      
+      // 关闭新增包裹对话框
+      addPackageDialogVisible.value = false
+      
+      // 清空表单
+      if (packageFormRef.value) {
+        packageFormRef.value.resetFields()
+      }
+      
+      // 清空OCR结果
+      clearOcrResult()
+      
+      // 刷新包裹列表
+      loadPackages()
+      
+      ElMessage.success(`包裹创建成功！运单号: ${packageData.tracking_number}`)
+    }
+    
     const processPickupCode = async (pickupCode) => {
       try {
         const response = await axios.get(`/api/v1/packages/search_by_code?code=${pickupCode}`)
@@ -1123,7 +1144,8 @@ export default {
       startScan,
       handleOcrResult,
       clearOcrResult,
-      applyAllOcrFields
+      applyAllOcrFields,
+      handlePackageCreated
     }
   }
 }
